@@ -7,7 +7,7 @@ Multi-tenant, AI-assisted algorithmic trading platform.
 | Phase | Description | Status |
 |-------|-------------|--------|
 | **Foundation** | Docker Compose, networks, infra services | ✅ Done ([PR #1](https://github.com/udai-kiran/aegis/pull/1)) |
-| **Phase 1** | Tenant model, users, RBAC, APIs, audit | 🔄 In progress |
+| **Phase 1** | Tenant model, users, RBAC, APIs, audit | ✅ Done ([PR #2](https://github.com/udai-kiran/aegis/pull/2)) |
 | **Phase 2** | Historical data, strategies, backtesting | 🔲 Not started |
 | **Phase 3** | Live data, paper trading, portfolio/risk | 🔲 Not started |
 | **Phase 4** | Broker execution, reconciliation | 🔲 Not started |
