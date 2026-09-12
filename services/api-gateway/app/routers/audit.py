@@ -1,4 +1,5 @@
 """Audit log read endpoints (tenant-scoped)."""
+
 from __future__ import annotations
 
 import uuid
@@ -24,7 +25,9 @@ def list_audit_events(
 ):
     """List audit events for a tenant. Platform admins see any tenant; tenant admins see their own."""
     if current_user.role != "PLATFORM_ADMIN" and current_user.tenant_id != tenant_id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
+        )
 
     return (
         db.query(AuditEvent)

@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ $# -ne 1 || -z "$1" ]]; then
+    echo "Usage: codex-reviewer '<review task prompt>'" >&2
+    exit 2
+fi
+
+if ! command -v codex >/dev/null 2>&1; then
+    echo "error: codex CLI not found on PATH" >&2
+    exit 127
+fi
+
+repo_root="$(git rev-parse --show-toplevel)"
+
+# Write review output into tasks/ at the repo root — the same directory
+# dsh-worker and codex-worker use for their reports.
+task_dir="$repo_root/tasks"
+mkdir -p "$task_dir"
+report_file="$(mktemp "$task_dir/codex-review.XXXXXX.md")"
+
+echo "codex review written to: $report_file" >&2
+
+exec codex exec \
+    --ephemeral \
+    --dangerously-bypass-approvals-and-sandbox \
+    --cd "$repo_root" \
+    --model gpt-5.6-sol \
+    --output-last-message "$report_file" \
+    -- "$1" < /dev/null

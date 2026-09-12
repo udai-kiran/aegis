@@ -1,4 +1,5 @@
 """Authentication endpoints: login and platform admin bootstrap."""
+
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -18,9 +19,13 @@ def login(body: LoginRequest, db: Session = Depends(get_db)):
     """Authenticate a user and return a JWT."""
     user = db.query(User).filter(User.email == body.email).first()
     if not user or not verify_password(body.password, user.password_hash):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials"
+        )
     if not user.is_active:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account disabled")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Account disabled"
+        )
 
     token = create_access_token(user.id, user.tenant_id, user.role)
     record_audit(db, action="user_login", tenant_id=user.tenant_id, user_id=user.id)
@@ -28,11 +33,15 @@ def login(body: LoginRequest, db: Session = Depends(get_db)):
     return TokenResponse(access_token=token)
 
 
-@router.post("/bootstrap", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/bootstrap", response_model=TokenResponse, status_code=status.HTTP_201_CREATED
+)
 def bootstrap(body: BootstrapRequest, db: Session = Depends(get_db)):
     """Create the first platform admin. Only works when no users exist."""
     if db.query(User).first() is not None:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Platform already bootstrapped")
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="Platform already bootstrapped"
+        )
 
     admin = User(
         email=body.email,
