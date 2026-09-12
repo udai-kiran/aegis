@@ -1,9 +1,9 @@
-"""Pydantic request/response schemas for Phase 1 & 2 APIs."""
+"""Pydantic request/response schemas for Phase 1 APIs."""
 
 from __future__ import annotations
 
 import uuid
-from datetime import date, datetime
+from datetime import datetime
 
 from pydantic import BaseModel, EmailStr, Field
 
@@ -120,52 +120,35 @@ class AuditEventResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
-# --- Instrument ---
-class InstrumentCreate(BaseModel):
-    symbol: str = Field(max_length=20)
-    exchange: str = Field(default="NSE", max_length=20)
-    instrument_type: str = Field(default="EQUITY", max_length=20)
-    name: str = Field(max_length=255)
-    lot_size: int = Field(default=1, ge=1)
-    tick_size: float = Field(default=0.05, gt=0)
-
-
-class InstrumentResponse(BaseModel):
-    id: uuid.UUID
-    symbol: str
-    exchange: str
-    instrument_type: str
-    name: str
-    lot_size: int
-    tick_size: float
-    is_active: bool
-    created_at: datetime
-    updated_at: datetime
-
-    model_config = {"from_attributes": True}
-
-
 # --- OHLCV ---
 class OHLCVBarCreate(BaseModel):
-    timeframe: str = Field(default="1d", max_length=5)
+    symbol: str = Field(max_length=50)
+    exchange: str = Field(max_length=20)
+    timeframe: str = Field(max_length=10)
     timestamp: datetime
-    open: float = Field(allow_inf_nan=False)
-    high: float = Field(allow_inf_nan=False)
-    low: float = Field(allow_inf_nan=False)
-    close: float = Field(allow_inf_nan=False)
-    volume: int = Field(default=0, ge=0)
+    open: float
+    high: float
+    low: float
+    close: float
+    volume: float
+
+
+class OHLCVBarBulkCreate(BaseModel):
+    bars: list[OHLCVBarCreate]
 
 
 class OHLCVBarResponse(BaseModel):
     id: uuid.UUID
-    instrument_id: uuid.UUID
+    tenant_id: uuid.UUID
+    symbol: str
+    exchange: str
     timeframe: str
     timestamp: datetime
     open: float
     high: float
     low: float
     close: float
-    volume: int
+    volume: float
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -173,58 +156,24 @@ class OHLCVBarResponse(BaseModel):
 
 # --- Strategy ---
 class StrategyCreate(BaseModel):
-    tenant_id: uuid.UUID | None = None
     name: str = Field(min_length=1, max_length=255)
-    description: str | None = Field(default=None, max_length=1000)
-    version: str = Field(default="1.0.0", max_length=20)
-    owner_type: str = Field(default="PLATFORM", max_length=10)
-    code_reference: str | None = Field(default=None, max_length=500)
+    version: str = "1.0"
+    strategy_type: str = Field(min_length=1, max_length=50)
+    description: str | None = None
 
 
 class StrategyUpdate(BaseModel):
-    name: str | None = None
     description: str | None = None
-    version: str | None = None
-    status: str | None = None
-    code_reference: str | None = None
+    is_active: bool | None = None
 
 
 class StrategyResponse(BaseModel):
     id: uuid.UUID
     tenant_id: uuid.UUID | None
     name: str
-    description: str | None
     version: str
-    owner_type: str
-    status: str
-    code_reference: str | None
-    created_at: datetime
-    updated_at: datetime
-
-    model_config = {"from_attributes": True}
-
-
-# --- Strategy Config ---
-class StrategyConfigCreate(BaseModel):
-    portfolio_id: uuid.UUID
-    strategy_id: uuid.UUID
-    parameters: dict = Field(default_factory=dict)
-    lifecycle_status: str = Field(default="DEVELOPMENT", max_length=30)
-
-
-class StrategyConfigUpdate(BaseModel):
-    parameters: dict | None = None
-    lifecycle_status: str | None = None
-    is_active: bool | None = None
-
-
-class StrategyConfigResponse(BaseModel):
-    id: uuid.UUID
-    tenant_id: uuid.UUID
-    portfolio_id: uuid.UUID
-    strategy_id: uuid.UUID
-    parameters: dict
-    lifecycle_status: str
+    strategy_type: str
+    description: str | None
     is_active: bool
     created_at: datetime
     updated_at: datetime
@@ -232,29 +181,57 @@ class StrategyConfigResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
-# --- Backtest ---
-class BacktestRunCreate(BaseModel):
+# --- StrategyConfig ---
+class StrategyConfigCreate(BaseModel):
+    strategy_id: uuid.UUID
     portfolio_id: uuid.UUID
-    strategy_config_id: uuid.UUID
-    start_date: date
-    end_date: date
-    timeframe: str = Field(default="1d", max_length=5)
     parameters: dict = Field(default_factory=dict)
 
 
-class BacktestRunResponse(BaseModel):
+class StrategyConfigUpdate(BaseModel):
+    parameters: dict | None = None
+    lifecycle_status: str | None = None
+
+
+class StrategyConfigResponse(BaseModel):
+    id: uuid.UUID
+    tenant_id: uuid.UUID
+    strategy_id: uuid.UUID
+    portfolio_id: uuid.UUID
+    parameters: dict
+    lifecycle_status: str
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+# --- Backtest ---
+class BacktestCreate(BaseModel):
+    strategy_config_id: uuid.UUID
+    symbol: str = Field(max_length=50)
+    exchange: str = Field(default="NSE", max_length=20)
+    timeframe: str = Field(default="1d", max_length=10)
+    start_date: datetime
+    end_date: datetime
+    parameters: dict = Field(default_factory=dict)
+
+
+class BacktestResponse(BaseModel):
     id: uuid.UUID
     tenant_id: uuid.UUID
     portfolio_id: uuid.UUID
     strategy_config_id: uuid.UUID
-    status: str
-    start_date: date
-    end_date: date
+    symbol: str
+    exchange: str
     timeframe: str
+    status: str
+    start_date: datetime
+    end_date: datetime
     parameters: dict
     metrics: dict | None
     error_message: str | None
     created_at: datetime
-    completed_at: datetime | None
+    updated_at: datetime
 
     model_config = {"from_attributes": True}

@@ -7,18 +7,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from app.database import Base, engine
-from app.routers import (
-    auth,
-    audit,
-    backtests,
-    instruments,
-    ohlcv,
-    portfolios,
-    strategies,
-    strategy_configs,
-    tenants,
-    users,
-)
+from app.routers import auth, tenants, users, portfolios, audit
+from app.routers import backtests, ohlcv, strategies
 
 
 @asynccontextmanager
@@ -43,8 +33,7 @@ app.include_router(tenants.router, prefix="/api")
 app.include_router(users.router, prefix="/api")
 app.include_router(portfolios.router, prefix="/api")
 app.include_router(audit.router, prefix="/api")
-app.include_router(instruments.router, prefix="/api")
 app.include_router(ohlcv.router, prefix="/api")
 app.include_router(strategies.router, prefix="/api")
-app.include_router(strategy_configs.router, prefix="/api")
+app.include_router(strategies.config_router, prefix="/api")
 app.include_router(backtests.router, prefix="/api")
