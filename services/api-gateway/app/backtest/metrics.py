@@ -1,4 +1,5 @@
 """Backtest performance metrics (PRD §23)."""
+
 from __future__ import annotations
 
 import math
@@ -24,7 +25,9 @@ def calculate_metrics(equity_curve: pd.Series, trades: list[dict]) -> dict:
     equity = pd.Series(equity_curve, dtype="float64")
     n_points = len(equity)
 
-    returns = equity.pct_change().dropna() if n_points >= 2 else pd.Series(dtype="float64")
+    returns = (
+        equity.pct_change().dropna() if n_points >= 2 else pd.Series(dtype="float64")
+    )
 
     # --- Equity-curve metrics -------------------------------------------------
     initial = float(equity.iloc[0]) if n_points >= 1 else 0.0
@@ -41,14 +44,22 @@ def calculate_metrics(equity_curve: pd.Series, trades: list[dict]) -> dict:
 
     mean_return = float(returns.mean()) if not returns.empty else 0.0
     std_return = float(returns.std()) if len(returns) >= 2 else 0.0
-    sharpe = mean_return / std_return * math.sqrt(ANNUALIZATION_FACTOR) if std_return else 0.0
+    sharpe = (
+        mean_return / std_return * math.sqrt(ANNUALIZATION_FACTOR)
+        if std_return
+        else 0.0
+    )
 
     if not returns.empty:
         downside = np.minimum(returns.to_numpy(), 0.0)
         downside_dev = float(np.sqrt(np.mean(np.square(downside))))
     else:
         downside_dev = 0.0
-    sortino = mean_return / downside_dev * math.sqrt(ANNUALIZATION_FACTOR) if downside_dev else 0.0
+    sortino = (
+        mean_return / downside_dev * math.sqrt(ANNUALIZATION_FACTOR)
+        if downside_dev
+        else 0.0
+    )
 
     if n_points >= 1:
         running_max = equity.cummax()

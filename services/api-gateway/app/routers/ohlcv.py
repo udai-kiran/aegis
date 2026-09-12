@@ -1,4 +1,5 @@
 """OHLCV market data endpoints (tenant-scoped)."""
+
 from __future__ import annotations
 
 import uuid
@@ -19,7 +20,9 @@ router = APIRouter(prefix="/tenants/{tenant_id}/ohlcv", tags=["ohlcv"])
 def _check_tenant_access(tenant_id: uuid.UUID, current_user: User) -> None:
     """Raise 403 if user is not platform admin and does not belong to the tenant."""
     if current_user.role != "PLATFORM_ADMIN" and current_user.tenant_id != tenant_id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
+        )
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
@@ -27,14 +30,18 @@ def upload_ohlcv_bars(
     tenant_id: uuid.UUID,
     body: OHLCVBarBulkCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role("PLATFORM_ADMIN", "TENANT_ADMIN", "RESEARCHER")),
+    current_user: User = Depends(
+        require_role("PLATFORM_ADMIN", "TENANT_ADMIN", "RESEARCHER")
+    ),
 ):
     """Bulk upload OHLCV bars for a tenant."""
     _check_tenant_access(tenant_id, current_user)
 
     tenant = db.query(Tenant).filter(Tenant.id == tenant_id).first()
     if not tenant:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tenant not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Tenant not found"
+        )
 
     bars = [
         OHLCVBar(
@@ -76,7 +83,16 @@ def list_ohlcv_bars(
     end: datetime | None = None,
     limit: int = 1000,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role("PLATFORM_ADMIN", "TENANT_ADMIN", "TRADER", "RESEARCHER", "RISK_MANAGER", "VIEWER")),
+    current_user: User = Depends(
+        require_role(
+            "PLATFORM_ADMIN",
+            "TENANT_ADMIN",
+            "TRADER",
+            "RESEARCHER",
+            "RISK_MANAGER",
+            "VIEWER",
+        )
+    ),
 ):
     """Query OHLCV bars for a symbol within a tenant."""
     _check_tenant_access(tenant_id, current_user)

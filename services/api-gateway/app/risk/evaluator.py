@@ -1,4 +1,5 @@
 """Deterministic risk manager: policy evaluation, position sizing, daily governor."""
+
 from __future__ import annotations
 
 import logging
@@ -144,7 +145,11 @@ class RiskEvaluator:
         reason = "Approved" if not reasons else "; ".join(reasons)
         logger.info(
             "Risk approved %s %s qty=%s approved=%s (%s)",
-            side, symbol, quantity, approved_quantity, reason,
+            side,
+            symbol,
+            quantity,
+            approved_quantity,
+            reason,
         )
         return RiskDecision(
             approved=True,
@@ -173,7 +178,8 @@ class RiskEvaluator:
         if portfolio is None:
             logger.warning(
                 "Portfolio %s not found for tenant %s; reporting NORMAL",
-                portfolio_id, tenant_id,
+                portfolio_id,
+                tenant_id,
             )
             return RiskStatus.NORMAL
 
@@ -214,6 +220,10 @@ class RiskEvaluator:
 
         logger.info(
             "Risk status for portfolio %s: %s (pnl_pct=%.4f, max_loss=%.4f, policy=%s)",
-            portfolio_id, status.value, pnl_pct, max_loss, policy.id,
+            portfolio_id,
+            status.value,
+            pnl_pct,
+            max_loss,
+            policy.id,
         )
         return status

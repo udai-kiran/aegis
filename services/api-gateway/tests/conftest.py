@@ -1,4 +1,5 @@
 """Test fixtures: SQLite in-memory database, test client, and helper factories."""
+
 from __future__ import annotations
 
 import uuid
@@ -56,6 +57,63 @@ def client(db):
     app.dependency_overrides[get_db] = override_get_db
     yield TestClient(app)
     app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def admin_headers(client) -> dict:
+    """Bootstrap a platform admin and return its Authorization header."""
+    response = client.post(
+        "/api/auth/bootstrap",
+        json={
+            "email": f"admin-{uuid.uuid4().hex[:8]}@test.com",
+            "password": "admin-pass-123",
+        },
+    )
+    assert response.status_code == 201, f"Bootstrap failed: {response.text}"
+    token = response.json()["access_token"]
+    return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.fixture
+def tenant_with_admin(client, admin_headers) -> dict:
+    """Create a tenant with a TENANT_ADMIN user and return its login state."""
+    tenant_response = client.post(
+        "/api/tenants",
+        json={"name": f"test-tenant-{uuid.uuid4().hex[:8]}"},
+        headers=admin_headers,
+    )
+    assert (
+        tenant_response.status_code == 201
+    ), f"Create tenant failed: {tenant_response.text}"
+    tenant_id = tenant_response.json()["id"]
+
+    email = f"tenant-admin-{uuid.uuid4().hex[:8]}@test.com"
+    password = "tenant-pass-123"
+    user_response = client.post(
+        f"/api/tenants/{tenant_id}/users",
+        json={"email": email, "password": password, "role": "TENANT_ADMIN"},
+        headers=admin_headers,
+    )
+    assert (
+        user_response.status_code == 201
+    ), f"Create tenant admin failed: {user_response.text}"
+    user_id = user_response.json()["id"]
+
+    login_response = client.post(
+        "/api/auth/login", json={"email": email, "password": password}
+    )
+    assert (
+        login_response.status_code == 200
+    ), f"Tenant admin login failed: {login_response.text}"
+    token = login_response.json()["access_token"]
+
+    return {
+        "tenant_id": tenant_id,
+        "user_id": user_id,
+        "email": email,
+        "password": password,
+        "headers": {"Authorization": f"Bearer {token}"},
+    }
 
 
 def create_test_tenant(db) -> Tenant:

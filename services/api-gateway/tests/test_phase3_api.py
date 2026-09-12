@@ -26,8 +26,9 @@ def _make_paper_portfolio(db, tenant, capital=100000.0) -> Portfolio:
     return portfolio
 
 
-def _paper_order_payload(portfolio, side="BUY", quantity=10, price=100.0,
-                         symbol="RELIANCE"):
+def _paper_order_payload(
+    portfolio, side="BUY", quantity=10, price=100.0, symbol="RELIANCE"
+):
     return {
         "portfolio_id": str(portfolio.id),
         "symbol": symbol,
