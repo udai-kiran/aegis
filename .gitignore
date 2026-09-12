@@ -16,3 +16,7 @@ build/
 .vscode/
 .idea/
 *.swp
+
+# AI tooling
+.claude/
+.codex/
