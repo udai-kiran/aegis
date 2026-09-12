@@ -1,4 +1,5 @@
 """Base classes for trading strategies."""
+
 from __future__ import annotations
 
 import abc

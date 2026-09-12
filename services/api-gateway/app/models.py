@@ -1,4 +1,5 @@
 """SQLAlchemy ORM models for Phase 1: tenants, users, portfolios, audit."""
+
 from __future__ import annotations
 
 import uuid
@@ -29,16 +30,26 @@ def _new_uuid() -> uuid.UUID:
 class Tenant(Base):
     __tablename__ = "tenants"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_new_uuid)
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=_new_uuid
+    )
     name: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="ACTIVE")
-    subscription_plan: Mapped[str] = mapped_column(String(50), nullable=False, default="FREE")
-    default_currency: Mapped[str] = mapped_column(String(3), nullable=False, default="INR")
+    subscription_plan: Mapped[str] = mapped_column(
+        String(50), nullable=False, default="FREE"
+    )
+    default_currency: Mapped[str] = mapped_column(
+        String(3), nullable=False, default="INR"
+    )
     risk_profile: Mapped[dict | None] = mapped_column(JSON, default=dict)
     resource_limits: Mapped[dict | None] = mapped_column(JSON, default=dict)
     features_enabled: Mapped[list | None] = mapped_column(JSON, default=list)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, onupdate=_utcnow)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, onupdate=_utcnow
+    )
 
     users: Mapped[list[User]] = relationship(back_populates="tenant")
     portfolios: Mapped[list[Portfolio]] = relationship(back_populates="tenant")
@@ -54,14 +65,22 @@ class User(Base):
     __tablename__ = "users"
     __table_args__ = (UniqueConstraint("email", name="uq_user_email"),)
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_new_uuid)
-    tenant_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=True)
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=_new_uuid
+    )
+    tenant_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=True
+    )
     email: Mapped[str] = mapped_column(String(255), nullable=False)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     role: Mapped[str] = mapped_column(String(20), nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, onupdate=_utcnow)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, onupdate=_utcnow
+    )
 
     tenant: Mapped[Tenant | None] = relationship(back_populates="users")
 
@@ -69,15 +88,25 @@ class User(Base):
 class Portfolio(Base):
     __tablename__ = "portfolios"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_new_uuid)
-    tenant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=_new_uuid
+    )
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False
+    )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     starting_capital: Mapped[float] = mapped_column(Numeric(20, 2), default=0)
     current_equity: Mapped[float] = mapped_column(Numeric(20, 2), default=0)
     cash: Mapped[float] = mapped_column(Numeric(20, 2), default=0)
-    trading_mode: Mapped[str] = mapped_column(String(20), nullable=False, default="PAPER")
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, onupdate=_utcnow)
+    trading_mode: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="PAPER"
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, onupdate=_utcnow
+    )
 
     tenant: Mapped[Tenant] = relationship(back_populates="portfolios")
 
@@ -85,25 +114,42 @@ class Portfolio(Base):
 class AuditEvent(Base):
     __tablename__ = "audit_events"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_new_uuid)
-    tenant_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=True)
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=_new_uuid
+    )
+    tenant_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=True
+    )
     user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
     action: Mapped[str] = mapped_column(String(100), nullable=False)
     resource: Mapped[str | None] = mapped_column(String(255))
     before_state: Mapped[dict | None] = mapped_column(JSON)
     after_state: Mapped[dict | None] = mapped_column(JSON)
     ip_address: Mapped[str | None] = mapped_column(String(45))
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow
+    )
 
 
 class OHLCVBar(Base):
     __tablename__ = "ohlcv_bars"
     __table_args__ = (
-        UniqueConstraint("tenant_id", "symbol", "exchange", "timeframe", "timestamp", name="uq_ohlcv_bar"),
+        UniqueConstraint(
+            "tenant_id",
+            "symbol",
+            "exchange",
+            "timeframe",
+            "timestamp",
+            name="uq_ohlcv_bar",
+        ),
     )
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_new_uuid)
-    tenant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=_new_uuid
+    )
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False
+    )
     symbol: Mapped[str] = mapped_column(String(50), nullable=False)
     exchange: Mapped[str] = mapped_column(String(20), nullable=False)
     timeframe: Mapped[str] = mapped_column(String(10), nullable=False)
@@ -113,7 +159,9 @@ class OHLCVBar(Base):
     low: Mapped[float] = mapped_column(Numeric(20, 4), nullable=False)
     close: Mapped[float] = mapped_column(Numeric(20, 4), nullable=False)
     volume: Mapped[float] = mapped_column(Numeric(20, 0), nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow
+    )
 
 
 class Strategy(Base):
@@ -122,140 +170,250 @@ class Strategy(Base):
         UniqueConstraint("tenant_id", "name", "version", name="uq_strategy_version"),
     )
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_new_uuid)
-    tenant_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=True)
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=_new_uuid
+    )
+    tenant_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=True
+    )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     version: Mapped[str] = mapped_column(String(50), nullable=False, default="1.0")
     strategy_type: Mapped[str] = mapped_column(String(50), nullable=False)
     description: Mapped[str | None] = mapped_column(String(1000), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, onupdate=_utcnow)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, onupdate=_utcnow
+    )
 
 
 class StrategyConfig(Base):
     __tablename__ = "strategy_configs"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_new_uuid)
-    tenant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
-    strategy_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("strategies.id"), nullable=False)
-    portfolio_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("portfolios.id"), nullable=False)
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=_new_uuid
+    )
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False
+    )
+    strategy_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("strategies.id"), nullable=False
+    )
+    portfolio_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("portfolios.id"), nullable=False
+    )
     parameters: Mapped[dict | None] = mapped_column(JSON, default=dict)
-    lifecycle_status: Mapped[str] = mapped_column(String(30), nullable=False, default="DEVELOPMENT")
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, onupdate=_utcnow)
+    lifecycle_status: Mapped[str] = mapped_column(
+        String(30), nullable=False, default="DEVELOPMENT"
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, onupdate=_utcnow
+    )
 
 
 class BacktestRun(Base):
     __tablename__ = "backtest_runs"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_new_uuid)
-    tenant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
-    portfolio_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("portfolios.id"), nullable=False)
-    strategy_config_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("strategy_configs.id"), nullable=False)
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=_new_uuid
+    )
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False
+    )
+    portfolio_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("portfolios.id"), nullable=False
+    )
+    strategy_config_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("strategy_configs.id"), nullable=False
+    )
     symbol: Mapped[str] = mapped_column(String(50), nullable=False)
     exchange: Mapped[str] = mapped_column(String(20), nullable=False, default="NSE")
     timeframe: Mapped[str] = mapped_column(String(10), nullable=False, default="1d")
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="PENDING")
-    start_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    start_date: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
     end_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     parameters: Mapped[dict | None] = mapped_column(JSON, default=dict)
     metrics: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     error_message: Mapped[str | None] = mapped_column(String(2000), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, onupdate=_utcnow)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, onupdate=_utcnow
+    )
 
 
 class RiskPolicy(Base):
     __tablename__ = "risk_policies"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_new_uuid)
-    tenant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
-    portfolio_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("portfolios.id"), nullable=True)
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=_new_uuid
+    )
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False
+    )
+    portfolio_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("portfolios.id"), nullable=True
+    )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
-    policy_type: Mapped[str] = mapped_column(String(30), nullable=False, default="TENANT")
-    max_daily_loss_pct: Mapped[float | None] = mapped_column(Numeric(10, 4), nullable=True)
-    max_drawdown_pct: Mapped[float | None] = mapped_column(Numeric(10, 4), nullable=True)
-    max_position_pct: Mapped[float | None] = mapped_column(Numeric(10, 4), nullable=True)
+    policy_type: Mapped[str] = mapped_column(
+        String(30), nullable=False, default="TENANT"
+    )
+    max_daily_loss_pct: Mapped[float | None] = mapped_column(
+        Numeric(10, 4), nullable=True
+    )
+    max_drawdown_pct: Mapped[float | None] = mapped_column(
+        Numeric(10, 4), nullable=True
+    )
+    max_position_pct: Mapped[float | None] = mapped_column(
+        Numeric(10, 4), nullable=True
+    )
     max_order_value: Mapped[float | None] = mapped_column(Numeric(20, 2), nullable=True)
-    max_leverage: Mapped[float | None] = mapped_column(Numeric(10, 4), nullable=True, default=1.0)
+    max_leverage: Mapped[float | None] = mapped_column(
+        Numeric(10, 4), nullable=True, default=1.0
+    )
     allowed_instruments: Mapped[list | None] = mapped_column(JSON, nullable=True)
     trading_windows: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, onupdate=_utcnow)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, onupdate=_utcnow
+    )
 
 
 class Position(Base):
     __tablename__ = "positions"
     __table_args__ = (
-        UniqueConstraint("tenant_id", "portfolio_id", "symbol", "exchange", name="uq_position"),
+        UniqueConstraint(
+            "tenant_id", "portfolio_id", "symbol", "exchange", name="uq_position"
+        ),
     )
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_new_uuid)
-    tenant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
-    portfolio_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("portfolios.id"), nullable=False)
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=_new_uuid
+    )
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False
+    )
+    portfolio_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("portfolios.id"), nullable=False
+    )
     symbol: Mapped[str] = mapped_column(String(50), nullable=False)
     exchange: Mapped[str] = mapped_column(String(20), nullable=False, default="NSE")
     quantity: Mapped[float] = mapped_column(Numeric(20, 4), nullable=False, default=0)
-    avg_entry_price: Mapped[float] = mapped_column(Numeric(20, 4), nullable=False, default=0)
+    avg_entry_price: Mapped[float] = mapped_column(
+        Numeric(20, 4), nullable=False, default=0
+    )
     current_price: Mapped[float | None] = mapped_column(Numeric(20, 4), nullable=True)
     unrealized_pnl: Mapped[float | None] = mapped_column(Numeric(20, 4), nullable=True)
-    realized_pnl: Mapped[float] = mapped_column(Numeric(20, 4), nullable=False, default=0)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, onupdate=_utcnow)
+    realized_pnl: Mapped[float] = mapped_column(
+        Numeric(20, 4), nullable=False, default=0
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, onupdate=_utcnow
+    )
 
 
 class Order(Base):
     __tablename__ = "orders"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_new_uuid)
-    tenant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
-    portfolio_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("portfolios.id"), nullable=False)
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=_new_uuid
+    )
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False
+    )
+    portfolio_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("portfolios.id"), nullable=False
+    )
     symbol: Mapped[str] = mapped_column(String(50), nullable=False)
     exchange: Mapped[str] = mapped_column(String(20), nullable=False, default="NSE")
     side: Mapped[str] = mapped_column(String(10), nullable=False)
-    order_type: Mapped[str] = mapped_column(String(20), nullable=False, default="MARKET")
+    order_type: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="MARKET"
+    )
     quantity: Mapped[float] = mapped_column(Numeric(20, 4), nullable=False)
     price: Mapped[float | None] = mapped_column(Numeric(20, 4), nullable=True)
-    filled_quantity: Mapped[float] = mapped_column(Numeric(20, 4), nullable=False, default=0)
+    filled_quantity: Mapped[float] = mapped_column(
+        Numeric(20, 4), nullable=False, default=0
+    )
     avg_fill_price: Mapped[float | None] = mapped_column(Numeric(20, 4), nullable=True)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="NEW")
     reject_reason: Mapped[str | None] = mapped_column(String(500), nullable=True)
     source: Mapped[str] = mapped_column(String(30), nullable=False, default="PAPER")
-    trade_intent_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("trade_intents.id"), nullable=True)
+    trade_intent_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("trade_intents.id"), nullable=True
+    )
     risk_decision: Mapped[dict | None] = mapped_column(JSON, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, onupdate=_utcnow)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, onupdate=_utcnow
+    )
 
 
 class Signal(Base):
     __tablename__ = "signals"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_new_uuid)
-    tenant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
-    portfolio_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("portfolios.id"), nullable=False)
-    strategy_config_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("strategy_configs.id"), nullable=False)
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=_new_uuid
+    )
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False
+    )
+    portfolio_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("portfolios.id"), nullable=False
+    )
+    strategy_config_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("strategy_configs.id"), nullable=False
+    )
     symbol: Mapped[str] = mapped_column(String(50), nullable=False)
     exchange: Mapped[str] = mapped_column(String(20), nullable=False, default="NSE")
     signal_value: Mapped[float] = mapped_column(Numeric(10, 4), nullable=False)
     confidence: Mapped[float] = mapped_column(Numeric(10, 4), nullable=False)
     expected_return: Mapped[float | None] = mapped_column(Numeric(10, 4), nullable=True)
-    expected_volatility: Mapped[float | None] = mapped_column(Numeric(10, 4), nullable=True)
+    expected_volatility: Mapped[float | None] = mapped_column(
+        Numeric(10, 4), nullable=True
+    )
     horizon: Mapped[str | None] = mapped_column(String(20), nullable=True)
     stop_price: Mapped[float | None] = mapped_column(Numeric(20, 4), nullable=True)
     target_price: Mapped[float | None] = mapped_column(Numeric(20, 4), nullable=True)
-    metadata_: Mapped[dict | None] = mapped_column("signal_metadata", JSON, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+    metadata_: Mapped[dict | None] = mapped_column(
+        "signal_metadata", JSON, nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow
+    )
 
 
 class TradeIntent(Base):
     __tablename__ = "trade_intents"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_new_uuid)
-    tenant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
-    portfolio_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("portfolios.id"), nullable=False)
-    signal_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("signals.id"), nullable=True)
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=_new_uuid
+    )
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False
+    )
+    portfolio_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("portfolios.id"), nullable=False
+    )
+    signal_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("signals.id"), nullable=True
+    )
     symbol: Mapped[str] = mapped_column(String(50), nullable=False)
     exchange: Mapped[str] = mapped_column(String(20), nullable=False, default="NSE")
     side: Mapped[str] = mapped_column(String(10), nullable=False)
@@ -263,5 +421,9 @@ class TradeIntent(Base):
     target_value: Mapped[float | None] = mapped_column(Numeric(20, 2), nullable=True)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="PENDING")
     risk_evaluation: Mapped[dict | None] = mapped_column(JSON, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, onupdate=_utcnow)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, onupdate=_utcnow
+    )

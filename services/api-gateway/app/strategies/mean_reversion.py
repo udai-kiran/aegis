@@ -1,4 +1,5 @@
 """Mean reversion strategy: fade moves beyond N standard deviations of the mean."""
+
 from __future__ import annotations
 
 import math
@@ -38,7 +39,13 @@ class MeanReversionStrategy(Strategy):
         close = prices["close"]
         mean = close.rolling(lookback).mean().iloc[-1]
         std = close.rolling(lookback).std().iloc[-1]
-        if mean is None or std is None or math.isnan(mean) or math.isnan(std) or std == 0:
+        if (
+            mean is None
+            or std is None
+            or math.isnan(mean)
+            or math.isnan(std)
+            or std == 0
+        ):
             return []
 
         z = (close.iloc[-1] - mean) / std

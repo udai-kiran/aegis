@@ -1,4 +1,5 @@
 """Portfolio manager: converts strategy signals into target exposures and trade intents."""
+
 from __future__ import annotations
 
 import logging
@@ -45,7 +46,9 @@ class PortfolioManager:
 
         portfolio = self.db.get(Portfolio, portfolio_id)
         if portfolio is None:
-            logger.warning("Portfolio %s not found; ignoring signal %s", portfolio_id, signal_id)
+            logger.warning(
+                "Portfolio %s not found; ignoring signal %s", portfolio_id, signal_id
+            )
             return None
 
         current_equity = float(portfolio.current_equity or 0)
@@ -77,7 +80,9 @@ class PortfolioManager:
             return None
 
         target_value = current_equity * abs(allocation)
-        target_quantity = math.floor(target_value / current_price) if current_price > 0 else 0
+        target_quantity = (
+            math.floor(target_value / current_price) if current_price > 0 else 0
+        )
 
         if allocation > 0:
             # Wants long: buy the difference between target and current holding.
@@ -125,5 +130,7 @@ class PortfolioManager:
             self.db.add(intent)
             intent_ids.append(intent.id)
         self.db.flush()
-        logger.info("Created %d trade intents for portfolio %s", len(intent_ids), portfolio_id)
+        logger.info(
+            "Created %d trade intents for portfolio %s", len(intent_ids), portfolio_id
+        )
         return intent_ids

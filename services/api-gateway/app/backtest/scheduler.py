@@ -1,4 +1,5 @@
 """Backtest scheduler with per-tenant concurrency quotas (PRD §22)."""
+
 from __future__ import annotations
 
 import collections
