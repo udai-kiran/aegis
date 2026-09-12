@@ -1,4 +1,5 @@
 """JWT authentication, password hashing, and FastAPI dependencies."""
+
 from __future__ import annotations
 
 import uuid
@@ -16,7 +17,14 @@ from app.database import get_db
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 bearer_scheme = HTTPBearer()
 
-VALID_ROLES = {"PLATFORM_ADMIN", "TENANT_ADMIN", "TRADER", "RESEARCHER", "RISK_MANAGER", "VIEWER"}
+VALID_ROLES = {
+    "PLATFORM_ADMIN",
+    "TENANT_ADMIN",
+    "TRADER",
+    "RESEARCHER",
+    "RISK_MANAGER",
+    "VIEWER",
+}
 VALID_TENANT_STATUSES = {"ACTIVE", "SUSPENDED", "READ_ONLY", "DISABLED"}
 VALID_TRADING_MODES = {"BACKTEST", "REPLAY", "PAPER", "SHADOW", "LIVE"}
 
@@ -31,7 +39,9 @@ def verify_password(plain: str, hashed: str) -> bool:
     return pwd_context.verify(plain, hashed)
 
 
-def create_access_token(user_id: uuid.UUID, tenant_id: uuid.UUID | None, role: str) -> str:
+def create_access_token(
+    user_id: uuid.UUID, tenant_id: uuid.UUID | None, role: str
+) -> str:
     """Create a signed JWT access token."""
     expire = datetime.now(timezone.utc) + timedelta(minutes=settings.jwt_expire_minutes)
     payload = {
@@ -51,17 +61,30 @@ def get_current_user(
     from app.models import User
 
     try:
-        payload = jwt.decode(creds.credentials, settings.jwt_secret, algorithms=[settings.jwt_algorithm])
+        payload = jwt.decode(
+            creds.credentials, settings.jwt_secret, algorithms=[settings.jwt_algorithm]
+        )
     except JWTError:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
+        )
 
     user_id = payload.get("sub")
     if not user_id:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token payload")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token payload"
+        )
 
-    user = db.query(User).filter(User.id == uuid.UUID(user_id), User.is_active.is_(True)).first()
+    user = (
+        db.query(User)
+        .filter(User.id == uuid.UUID(user_id), User.is_active.is_(True))
+        .first()
+    )
     if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found or inactive")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found or inactive",
+        )
     return user
 
 
@@ -70,7 +93,9 @@ def require_role(*allowed_roles: str):
 
     def checker(current_user=Depends(get_current_user)):
         if current_user.role not in allowed_roles:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient permissions")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient permissions"
+            )
         return current_user
 
     return checker
@@ -81,5 +106,7 @@ def require_tenant_access(tenant_id: uuid.UUID, current_user=Depends(get_current
     if current_user.role == "PLATFORM_ADMIN":
         return current_user
     if current_user.tenant_id != tenant_id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied to this tenant")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Access denied to this tenant"
+        )
     return current_user
