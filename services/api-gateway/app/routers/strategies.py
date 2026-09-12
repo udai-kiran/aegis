@@ -1,5 +1,4 @@
-"""Strategy management endpoints (platform and tenant-owned)."""
-
+"""Strategy and strategy config endpoints (tenant-scoped)."""
 from __future__ import annotations
 
 import uuid
@@ -7,96 +6,78 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.auth import get_current_user
+from app.auth import require_role
 from app.audit import record_audit
 from app.database import get_db
-from app.models import Strategy, Tenant, User
-from app.schemas import StrategyCreate, StrategyResponse, StrategyUpdate
+from app.models import Portfolio, Strategy, StrategyConfig, User
+from app.schemas import (
+    StrategyConfigCreate,
+    StrategyConfigResponse,
+    StrategyConfigUpdate,
+    StrategyCreate,
+    StrategyResponse,
+    StrategyUpdate,
+)
 
-router = APIRouter(prefix="/strategies", tags=["strategies"])
+router = APIRouter(prefix="/tenants/{tenant_id}/strategies", tags=["strategies"])
+config_router = APIRouter(prefix="/tenants/{tenant_id}/strategy-configs", tags=["strategy-configs"])
+
+
+def _check_tenant_access(tenant_id: uuid.UUID, current_user: User) -> None:
+    """Raise 403 if user is not platform admin and does not belong to the tenant."""
+    if current_user.role != "PLATFORM_ADMIN" and current_user.tenant_id != tenant_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+
+
+def _get_accessible_strategy(db: Session, tenant_id: uuid.UUID, strategy_id: uuid.UUID) -> Strategy | None:
+    """Return the strategy if it belongs to the tenant or is a platform strategy."""
+    return (
+        db.query(Strategy)
+        .filter(Strategy.id == strategy_id, (Strategy.tenant_id == tenant_id) | (Strategy.tenant_id.is_(None)))
+        .first()
+    )
 
 
 @router.get("", response_model=list[StrategyResponse])
 def list_strategies(
+    tenant_id: uuid.UUID,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_role("PLATFORM_ADMIN", "TENANT_ADMIN", "TRADER", "RESEARCHER", "RISK_MANAGER", "VIEWER")),
 ):
-    """List strategies visible to the current user.
-    Platform strategies (owner_type=PLATFORM) are visible to all.
-    Tenant strategies are visible only to members of that tenant.
-    Platform admins see everything."""
-    if current_user.role == "PLATFORM_ADMIN":
-        return db.query(Strategy).order_by(Strategy.name).all()
-
+    """List strategies visible to the tenant (tenant-owned plus platform strategies)."""
+    _check_tenant_access(tenant_id, current_user)
     return (
         db.query(Strategy)
-        .filter(
-            (Strategy.owner_type == "PLATFORM")
-            | (Strategy.tenant_id == current_user.tenant_id)
-        )
-        .order_by(Strategy.name)
+        .filter((Strategy.tenant_id == tenant_id) | (Strategy.tenant_id.is_(None)))
+        .order_by(Strategy.created_at)
         .all()
     )
 
 
 @router.post("", response_model=StrategyResponse, status_code=status.HTTP_201_CREATED)
 def create_strategy(
+    tenant_id: uuid.UUID,
     body: StrategyCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_role("PLATFORM_ADMIN", "TENANT_ADMIN", "RESEARCHER")),
 ):
-    """Create a strategy.
-    - owner_type=PLATFORM, tenant_id=None: requires PLATFORM_ADMIN
-    - owner_type=TENANT, tenant_id set: requires TENANT_ADMIN or RESEARCHER in that tenant
-    """
-    if body.owner_type == "PLATFORM":
-        if current_user.role != "PLATFORM_ADMIN":
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Only platform admins can create platform strategies",
-            )
-        if body.tenant_id is not None:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Platform strategies must not have a tenant_id",
-            )
-    elif body.owner_type == "TENANT":
-        if body.tenant_id is None:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Tenant strategies must specify a tenant_id",
-            )
-        if current_user.role not in ("PLATFORM_ADMIN", "TENANT_ADMIN", "RESEARCHER"):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Insufficient permissions to create tenant strategies",
-            )
-        if (
-            current_user.role != "PLATFORM_ADMIN"
-            and current_user.tenant_id != body.tenant_id
-        ):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Access denied to this tenant",
-            )
-        tenant = db.query(Tenant).filter(Tenant.id == body.tenant_id).first()
-        if not tenant:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="Tenant not found"
-            )
-    else:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="owner_type must be PLATFORM or TENANT",
-        )
+    """Create a strategy within a tenant."""
+    _check_tenant_access(tenant_id, current_user)
+
+    existing = (
+        db.query(Strategy)
+        .filter(Strategy.tenant_id == tenant_id, Strategy.name == body.name, Strategy.version == body.version)
+        .first()
+    )
+    if existing:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Strategy with this name and version already exists")
 
     strategy = Strategy(
-        tenant_id=body.tenant_id,
+        tenant_id=tenant_id,
         name=body.name,
-        description=body.description,
         version=body.version,
-        owner_type=body.owner_type,
-        code_reference=body.code_reference,
+        strategy_type=body.strategy_type,
+        description=body.description,
     )
     db.add(strategy)
     db.flush()
@@ -104,10 +85,10 @@ def create_strategy(
     record_audit(
         db,
         action="strategy_created",
-        tenant_id=body.tenant_id,
+        tenant_id=tenant_id,
         user_id=current_user.id,
         resource=f"strategy:{strategy.id}",
-        after_state=body.model_dump(mode="json"),
+        after_state=body.model_dump(),
     )
     db.commit()
     db.refresh(strategy)
@@ -116,72 +97,39 @@ def create_strategy(
 
 @router.get("/{strategy_id}", response_model=StrategyResponse)
 def get_strategy(
+    tenant_id: uuid.UUID,
     strategy_id: uuid.UUID,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_role("PLATFORM_ADMIN", "TENANT_ADMIN", "TRADER", "RESEARCHER", "RISK_MANAGER", "VIEWER")),
 ):
-    """Get a single strategy. Checks visibility."""
-    strategy = db.query(Strategy).filter(Strategy.id == strategy_id).first()
+    """Get a single strategy (tenant-owned or platform)."""
+    _check_tenant_access(tenant_id, current_user)
+
+    strategy = _get_accessible_strategy(db, tenant_id, strategy_id)
     if not strategy:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Strategy not found"
-        )
-
-    if strategy.owner_type == "TENANT" and current_user.role != "PLATFORM_ADMIN":
-        if current_user.tenant_id != strategy.tenant_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
-            )
-
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Strategy not found")
     return strategy
 
 
 @router.patch("/{strategy_id}", response_model=StrategyResponse)
 def update_strategy(
+    tenant_id: uuid.UUID,
     strategy_id: uuid.UUID,
     body: StrategyUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_role("PLATFORM_ADMIN", "TENANT_ADMIN", "RESEARCHER")),
 ):
-    """Update a strategy. Ownership check enforced."""
-    strategy = db.query(Strategy).filter(Strategy.id == strategy_id).first()
+    """Update a strategy."""
+    _check_tenant_access(tenant_id, current_user)
+
+    strategy = _get_accessible_strategy(db, tenant_id, strategy_id)
     if not strategy:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Strategy not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Strategy not found")
+    if strategy.tenant_id is None and current_user.role != "PLATFORM_ADMIN":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Platform strategies can only be updated by platform admins")
 
-    # Ownership check
-    if strategy.owner_type == "PLATFORM":
-        if current_user.role != "PLATFORM_ADMIN":
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Only platform admins can update platform strategies",
-            )
-    else:
-        if current_user.role not in ("PLATFORM_ADMIN", "TENANT_ADMIN", "RESEARCHER"):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient permissions"
-            )
-        if (
-            current_user.role != "PLATFORM_ADMIN"
-            and current_user.tenant_id != strategy.tenant_id
-        ):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
-            )
-
-    before = {
-        "name": strategy.name,
-        "version": strategy.version,
-        "status": strategy.status,
-    }
+    before = {"description": strategy.description, "is_active": strategy.is_active}
     updates = body.model_dump(exclude_unset=True)
-    for key in ("name", "version", "status"):
-        if key in updates and updates[key] is None:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"{key} cannot be set to null",
-            )
     for key, value in updates.items():
         setattr(strategy, key, value)
     db.flush()
@@ -189,7 +137,7 @@ def update_strategy(
     record_audit(
         db,
         action="strategy_updated",
-        tenant_id=strategy.tenant_id,
+        tenant_id=tenant_id,
         user_id=current_user.id,
         resource=f"strategy:{strategy_id}",
         before_state=before,
@@ -198,3 +146,94 @@ def update_strategy(
     db.commit()
     db.refresh(strategy)
     return strategy
+
+
+@config_router.post("", response_model=StrategyConfigResponse, status_code=status.HTTP_201_CREATED)
+def create_strategy_config(
+    tenant_id: uuid.UUID,
+    body: StrategyConfigCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("PLATFORM_ADMIN", "TENANT_ADMIN", "RESEARCHER")),
+):
+    """Create a strategy config within a tenant."""
+    _check_tenant_access(tenant_id, current_user)
+
+    strategy = _get_accessible_strategy(db, tenant_id, body.strategy_id)
+    if not strategy:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Strategy not found")
+
+    portfolio = db.query(Portfolio).filter(Portfolio.id == body.portfolio_id, Portfolio.tenant_id == tenant_id).first()
+    if not portfolio:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Portfolio not found")
+
+    config = StrategyConfig(
+        tenant_id=tenant_id,
+        strategy_id=body.strategy_id,
+        portfolio_id=body.portfolio_id,
+        parameters=body.parameters,
+    )
+    db.add(config)
+    db.flush()
+
+    record_audit(
+        db,
+        action="strategy_config_created",
+        tenant_id=tenant_id,
+        user_id=current_user.id,
+        resource=f"strategy_config:{config.id}",
+        after_state=body.model_dump(mode="json"),
+    )
+    db.commit()
+    db.refresh(config)
+    return config
+
+
+@config_router.get("", response_model=list[StrategyConfigResponse])
+def list_strategy_configs(
+    tenant_id: uuid.UUID,
+    portfolio_id: uuid.UUID | None = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("PLATFORM_ADMIN", "TENANT_ADMIN", "TRADER", "RESEARCHER", "RISK_MANAGER", "VIEWER")),
+):
+    """List strategy configs for a tenant, optionally filtered by portfolio."""
+    _check_tenant_access(tenant_id, current_user)
+
+    query = db.query(StrategyConfig).filter(StrategyConfig.tenant_id == tenant_id)
+    if portfolio_id is not None:
+        query = query.filter(StrategyConfig.portfolio_id == portfolio_id)
+    return query.order_by(StrategyConfig.created_at).all()
+
+
+@config_router.patch("/{config_id}", response_model=StrategyConfigResponse)
+def update_strategy_config(
+    tenant_id: uuid.UUID,
+    config_id: uuid.UUID,
+    body: StrategyConfigUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("PLATFORM_ADMIN", "TENANT_ADMIN", "RESEARCHER")),
+):
+    """Update a strategy config."""
+    _check_tenant_access(tenant_id, current_user)
+
+    config = db.query(StrategyConfig).filter(StrategyConfig.id == config_id, StrategyConfig.tenant_id == tenant_id).first()
+    if not config:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Strategy config not found")
+
+    before = {"parameters": config.parameters, "lifecycle_status": config.lifecycle_status}
+    updates = body.model_dump(exclude_unset=True)
+    for key, value in updates.items():
+        setattr(config, key, value)
+    db.flush()
+
+    record_audit(
+        db,
+        action="strategy_config_updated",
+        tenant_id=tenant_id,
+        user_id=current_user.id,
+        resource=f"strategy_config:{config_id}",
+        before_state=before,
+        after_state=updates,
+    )
+    db.commit()
+    db.refresh(config)
+    return config
