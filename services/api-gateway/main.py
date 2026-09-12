@@ -9,6 +9,7 @@ from fastapi import FastAPI
 from app.database import Base, engine
 from app.routers import auth, tenants, users, portfolios, audit
 from app.routers import backtests, ohlcv, strategies
+from app.routers import risk_policies, positions, orders, paper_trading, dashboard
 
 
 @asynccontextmanager
@@ -37,3 +38,8 @@ app.include_router(ohlcv.router, prefix="/api")
 app.include_router(strategies.router, prefix="/api")
 app.include_router(strategies.config_router, prefix="/api")
 app.include_router(backtests.router, prefix="/api")
+app.include_router(risk_policies.router, prefix="/api")
+app.include_router(positions.router, prefix="/api")
+app.include_router(orders.router, prefix="/api")
+app.include_router(paper_trading.router, prefix="/api")
+app.include_router(dashboard.router, prefix="/api")
