@@ -235,3 +235,155 @@ class BacktestResponse(BaseModel):
     updated_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+# --- RiskPolicy ---
+class RiskPolicyCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=255)
+    portfolio_id: uuid.UUID | None = None
+    policy_type: str = Field(default="TENANT", max_length=30)
+    max_daily_loss_pct: float | None = None
+    max_drawdown_pct: float | None = None
+    max_position_pct: float | None = None
+    max_order_value: float | None = None
+    max_leverage: float | None = Field(default=1.0)
+    allowed_instruments: list[str] | None = None
+    trading_windows: dict | None = None
+
+
+class RiskPolicyUpdate(BaseModel):
+    name: str | None = None
+    portfolio_id: uuid.UUID | None = None
+    policy_type: str | None = None
+    max_daily_loss_pct: float | None = None
+    max_drawdown_pct: float | None = None
+    max_position_pct: float | None = None
+    max_order_value: float | None = None
+    max_leverage: float | None = None
+    allowed_instruments: list[str] | None = None
+    trading_windows: dict | None = None
+
+
+class RiskPolicyResponse(BaseModel):
+    id: uuid.UUID
+    tenant_id: uuid.UUID
+    name: str
+    portfolio_id: uuid.UUID | None = None
+    policy_type: str = Field(default="TENANT", max_length=30)
+    max_daily_loss_pct: float | None = None
+    max_drawdown_pct: float | None = None
+    max_position_pct: float | None = None
+    max_order_value: float | None = None
+    max_leverage: float | None = Field(default=1.0)
+    allowed_instruments: list[str] | None = None
+    trading_windows: dict | None = None
+    is_active: bool
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+# --- Position ---
+class PositionResponse(BaseModel):
+    id: uuid.UUID
+    tenant_id: uuid.UUID
+    portfolio_id: uuid.UUID
+    symbol: str
+    exchange: str
+    quantity: float
+    avg_entry_price: float
+    current_price: float | None
+    unrealized_pnl: float | None
+    realized_pnl: float
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+# --- Order ---
+class OrderCreate(BaseModel):
+    portfolio_id: uuid.UUID
+    symbol: str = Field(max_length=50)
+    exchange: str = Field(default="NSE", max_length=20)
+    side: str = Field(max_length=10)
+    order_type: str = Field(default="MARKET", max_length=20)
+    quantity: float = Field(gt=0)
+    price: float | None = None
+
+
+class OrderResponse(BaseModel):
+    id: uuid.UUID
+    tenant_id: uuid.UUID
+    portfolio_id: uuid.UUID
+    symbol: str
+    exchange: str
+    side: str
+    order_type: str
+    quantity: float
+    price: float | None
+    filled_quantity: float
+    avg_fill_price: float | None
+    status: str
+    reject_reason: str | None
+    source: str
+    risk_decision: dict | None
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+# --- Signal ---
+class SignalResponse(BaseModel):
+    id: uuid.UUID
+    tenant_id: uuid.UUID
+    portfolio_id: uuid.UUID
+    strategy_config_id: uuid.UUID
+    symbol: str
+    exchange: str
+    signal_value: float
+    confidence: float
+    expected_return: float | None
+    expected_volatility: float | None
+    horizon: str | None
+    stop_price: float | None
+    target_price: float | None
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+# --- TradeIntent ---
+class TradeIntentResponse(BaseModel):
+    id: uuid.UUID
+    tenant_id: uuid.UUID
+    portfolio_id: uuid.UUID
+    signal_id: uuid.UUID | None
+    symbol: str
+    exchange: str
+    side: str
+    target_quantity: float
+    target_value: float | None
+    status: str
+    risk_evaluation: dict | None
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+# --- PortfolioDashboard ---
+class PortfolioDashboard(BaseModel):
+    portfolio_id: uuid.UUID
+    portfolio_name: str
+    trading_mode: str
+    starting_capital: float
+    current_equity: float
+    cash: float
+    total_pnl: float
+    daily_pnl: float
+    positions_count: int
+    open_orders_count: int
+    risk_status: str
