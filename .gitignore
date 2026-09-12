@@ -16,3 +16,11 @@ build/
 .vscode/
 .idea/
 *.swp
+
+# Claude Code — ignore session artifacts, keep project config
+.claude/*
+!.claude/agents/
+!.claude/bin/
+!.claude/config/
+!.claude/hooks/
+!.claude/settings.json
