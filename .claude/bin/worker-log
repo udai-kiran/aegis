@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+    cat >&2 <<'EOF'
+Usage: worker-log verify <report-path> pass|fail
+
+Records a verification outcome for a worker implementation report.
+Appends to tasks/.worker-verify.jsonl in the repository root.
+EOF
+}
+
+if [[ $# -ne 3 || "$1" != "verify" || -z "$2" ]]; then
+    usage
+    exit 2
+fi
+
+report_path="$2"
+outcome="$3"
+
+if [[ "$outcome" != "pass" && "$outcome" != "fail" ]]; then
+    echo "error: outcome must be 'pass' or 'fail', got: $outcome" >&2
+    exit 2
+fi
+
+repo_root="$(git rev-parse --show-toplevel)"
+
+# Canonicalize report path to absolute (worker bins do the same, so the join
+# in worker-stats matches).
+[[ "$report_path" == /* ]] || report_path="$repo_root/$report_path"
+
+log_file="$repo_root/tasks/.worker-verify.jsonl"
+mkdir -p "$(dirname "$log_file")"
+
+timestamp="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+printf '{"report":"%s","verified":"%s","ts":"%s"}\n' \
+    "$report_path" "$outcome" "$timestamp" >>"$log_file"
+
+echo "logged: $outcome for $report_path" >&2

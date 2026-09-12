@@ -1,0 +1,86 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root="$(git rev-parse --show-toplevel)"
+perf_log="$repo_root/tasks/.worker-perf.jsonl"
+verify_log="$repo_root/tasks/.worker-verify.jsonl"
+
+if [[ ! -f "$perf_log" ]]; then
+    echo "No worker performance data yet (run workers first)." >&2
+    echo "Using cold_start_order from worker-map.json." >&2
+    exit 0
+fi
+
+# If verify log doesn't exist yet, use /dev/null so awk doesn't fail
+_verify_log_path="$verify_log"
+[[ -f "$verify_log" ]] || verify_log="/dev/null"
+
+# Join perf and verify logs on report path, compute stats per worker
+# Uses awk for portability (no jq requirement)
+awk -F'"' '
+    FILENAME == ARGV[1] {
+        for (i=1; i<=NF; i++) {
+            if ($i == "worker" && $(i+1) == ":") w = $(i+2)
+            if ($i == "report" && $(i+1) == ":") r = $(i+2)
+        }
+        if (w != "" && r != "") {
+            perf_worker[r] = w
+            worker_total[w]++
+        }
+        w = ""; r = ""
+        next
+    }
+    FILENAME == ARGV[2] {
+        for (i=1; i<=NF; i++) {
+            if ($i == "report" && $(i+1) == ":") r = $(i+2)
+            if ($i == "verified" && $(i+1) == ":") o = $(i+2)
+        }
+        if (r != "" && o != "") {
+            verify_outcome[r] = o
+        }
+        r = ""; o = ""
+        next
+    }
+    END {
+        for (r in verify_outcome) {
+            w = perf_worker[r]
+            if (w == "") continue
+            verified_total[w]++
+            if (verify_outcome[r] == "pass") verified_pass[w]++
+        }
+
+        printf "Worker stats (verified briefs):\n"
+        printf "  %-12s  %-12s  %s\n", "WORKER", "PASS/TOTAL", "RATE"
+
+        n = 0
+        for (w in worker_total) workers[n++] = w
+
+        for (i=0; i<n; i++) {
+            w = workers[i]
+            p = verified_pass[w]+0
+            t = verified_total[w]+0
+            total = worker_total[w]+0
+            if (t > 0)
+                rate = sprintf("%.0f%%", (p/t)*100)
+            else
+                rate = "n/a"
+            printf "  %-12s  %d/%-10d  %-6s  (%d total runs)\n", w, p, t, rate, total
+        }
+
+        cold = ""
+        for (i=0; i<n; i++) {
+            w = workers[i]
+            if (verified_total[w]+0 < 5) {
+                if (cold != "") cold = cold ", "
+                cold = cold w
+            }
+        }
+        if (cold != "")
+            printf "\nCold-start workers (< 5 verified samples): %s\n", cold
+    }
+' "$perf_log" "$verify_log" 2>/dev/null
+
+if [[ ! -f "$_verify_log_path" ]]; then
+    printf "\nNo verification outcomes logged yet.\n"
+    printf "Run: worker-log verify <report-path> pass|fail\n"
+fi

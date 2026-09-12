@@ -1,0 +1,13 @@
+❯ make up                                                                                                                                                                                   ─╯
+docker compose --env-file .env.local up -d
+[+] up 7/8
+ ✔ Network aegis-trader_internal  Created                                                                                                                                                  0.0s
+ ✔ Network aegis-trader_external  Created                                                                                                                                                  0.0s
+ ✔ Network aegis-trader_execution Created                                                                                                                                                  0.0s
+ ✔ Container aegis-minio          Started                                                                                                                                                  0.4s
+ ✘ Container aegis-postgres       Error dependency postgres failed to start                                                                                                                1.0s
+ ⠏ Container aegis-redis          Waiting                                                                                                                                                  1.0s
+ ✔ Container aegis-api-gateway    Created                                                                                                                                                  0.0s
+ ✔ Container aegis-traefik        Created                                                                                                                                                  0.0s
+dependency failed to start: container aegis-postgres is unhealthy
+make: *** [Makefile:10: up] Error 1

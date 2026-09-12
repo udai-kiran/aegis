@@ -1,0 +1,14 @@
+# Aegis Trader - Local Environment Configuration
+# Copy to .env.local before running: make up
+
+# PostgreSQL
+POSTGRES_DB=aegis
+POSTGRES_USER=aegis
+POSTGRES_PASSWORD=aegis_local_dev
+
+# MinIO (Object Storage)
+MINIO_ROOT_USER=aegis
+MINIO_ROOT_PASSWORD=aegis_local_dev
+
+# Traefik (Reverse Proxy)
+TRAEFIK_HTTP_PORT=80
