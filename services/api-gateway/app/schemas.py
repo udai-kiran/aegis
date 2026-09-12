@@ -118,3 +118,120 @@ class AuditEventResponse(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+# --- OHLCV ---
+class OHLCVBarCreate(BaseModel):
+    symbol: str = Field(max_length=50)
+    exchange: str = Field(max_length=20)
+    timeframe: str = Field(max_length=10)
+    timestamp: datetime
+    open: float
+    high: float
+    low: float
+    close: float
+    volume: float
+
+
+class OHLCVBarBulkCreate(BaseModel):
+    bars: list[OHLCVBarCreate]
+
+
+class OHLCVBarResponse(BaseModel):
+    id: uuid.UUID
+    tenant_id: uuid.UUID
+    symbol: str
+    exchange: str
+    timeframe: str
+    timestamp: datetime
+    open: float
+    high: float
+    low: float
+    close: float
+    volume: float
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+# --- Strategy ---
+class StrategyCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=255)
+    version: str = "1.0"
+    strategy_type: str = Field(min_length=1, max_length=50)
+    description: str | None = None
+
+
+class StrategyUpdate(BaseModel):
+    description: str | None = None
+    is_active: bool | None = None
+
+
+class StrategyResponse(BaseModel):
+    id: uuid.UUID
+    tenant_id: uuid.UUID | None
+    name: str
+    version: str
+    strategy_type: str
+    description: str | None
+    is_active: bool
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+# --- StrategyConfig ---
+class StrategyConfigCreate(BaseModel):
+    strategy_id: uuid.UUID
+    portfolio_id: uuid.UUID
+    parameters: dict = Field(default_factory=dict)
+
+
+class StrategyConfigUpdate(BaseModel):
+    parameters: dict | None = None
+    lifecycle_status: str | None = None
+
+
+class StrategyConfigResponse(BaseModel):
+    id: uuid.UUID
+    tenant_id: uuid.UUID
+    strategy_id: uuid.UUID
+    portfolio_id: uuid.UUID
+    parameters: dict
+    lifecycle_status: str
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+# --- Backtest ---
+class BacktestCreate(BaseModel):
+    strategy_config_id: uuid.UUID
+    symbol: str = Field(max_length=50)
+    exchange: str = Field(default="NSE", max_length=20)
+    timeframe: str = Field(default="1d", max_length=10)
+    start_date: datetime
+    end_date: datetime
+    parameters: dict = Field(default_factory=dict)
+
+
+class BacktestResponse(BaseModel):
+    id: uuid.UUID
+    tenant_id: uuid.UUID
+    portfolio_id: uuid.UUID
+    strategy_config_id: uuid.UUID
+    symbol: str
+    exchange: str
+    timeframe: str
+    status: str
+    start_date: datetime
+    end_date: datetime
+    parameters: dict
+    metrics: dict | None
+    error_message: str | None
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
