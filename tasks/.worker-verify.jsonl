@@ -1,0 +1,17 @@
+{"report":"/home/udai/personal/aegis/tasks/docker-foundation/brief-1-scaffold.md","verified":"fail","ts":"2026-09-11T14:54:47Z"}
+{"report":"/home/udai/personal/aegis/tasks/docker-foundation/brief-2-compose.md","verified":"pass","ts":"2026-09-11T14:55:06Z"}
+{"report":"/home/udai/personal/aegis/tasks/docker-foundation/brief-3-infra-configs.md","verified":"pass","ts":"2026-09-11T14:55:06Z"}
+{"report":"/home/udai/personal/aegis/tasks/docker-foundation/brief-4-env-override.md","verified":"pass","ts":"2026-09-11T14:56:20Z"}
+{"report":"/home/udai/personal/aegis/tasks/phase1/brief1-foundation.md","verified":"fail","ts":"2026-09-11T17:44:10Z"}
+{"report":"/home/udai/personal/aegis/tasks/phase1/brief2-schemas-auth.md","verified":"pass","ts":"2026-09-11T17:44:10Z"}
+{"report":"/home/udai/personal/aegis/tasks/phase1/brief1-foundation-retry.md","verified":"pass","ts":"2026-09-11T17:48:13Z"}
+{"report":"/home/udai/personal/aegis/tasks/phase1/brief3-auth-tenant-routers.md","verified":"pass","ts":"2026-09-11T17:50:01Z"}
+{"report":"/home/udai/personal/aegis/tasks/phase1/brief4-users-router.md","verified":"pass","ts":"2026-09-11T17:50:01Z"}
+{"report":"/home/udai/personal/aegis/tasks/phase1/brief5-portfolio-audit-routers.md","verified":"pass","ts":"2026-09-11T17:50:01Z"}
+{"report":"/home/udai/personal/aegis/tasks/phase1/brief6-main-dockerfile.md","verified":"pass","ts":"2026-09-11T17:51:48Z"}
+{"report":"/home/udai/personal/aegis/tasks/phase1/brief7-compose-env.md","verified":"pass","ts":"2026-09-11T17:51:48Z"}
+{"report":"/home/udai/personal/aegis/tasks/phase2/codex-fix-1.md","verified":"pass","ts":"2026-09-12T03:47:50Z"}
+{"report":"/home/udai/personal/aegis/tasks/phase2/codex-fix-2.md","verified":"pass","ts":"2026-09-12T03:47:50Z"}
+{"report":"/home/udai/personal/aegis/tasks/phase2/codex-fix-3.md","verified":"pass","ts":"2026-09-12T03:47:50Z"}
+{"report":"/home/udai/personal/aegis/tasks/phase2/codex-fix-4.md","verified":"pass","ts":"2026-09-12T03:57:07Z"}
+{"report":"/home/udai/personal/aegis/tasks/phase2/codex-fix-5.md","verified":"pass","ts":"2026-09-12T03:57:07Z"}
