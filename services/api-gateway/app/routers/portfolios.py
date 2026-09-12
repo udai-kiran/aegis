@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from app.auth import require_role
 from app.audit import record_audit
 from app.database import get_db
-from app.models import Portfolio, Tenant, User
+from app.models import BacktestRun, Portfolio, StrategyConfig, Tenant, User
 from app.schemas import PortfolioCreate, PortfolioResponse, PortfolioUpdate
 
 router = APIRouter(prefix="/tenants/{tenant_id}/portfolios", tags=["portfolios"])
@@ -134,6 +134,28 @@ def delete_portfolio(
     portfolio = db.query(Portfolio).filter(Portfolio.id == portfolio_id, Portfolio.tenant_id == tenant_id).first()
     if not portfolio:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Portfolio not found")
+
+    has_configs = (
+        db.query(StrategyConfig)
+        .filter(StrategyConfig.portfolio_id == portfolio_id, StrategyConfig.tenant_id == tenant_id)
+        .first()
+    )
+    if has_configs:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Cannot delete portfolio with active strategy configurations",
+        )
+
+    has_runs = (
+        db.query(BacktestRun)
+        .filter(BacktestRun.portfolio_id == portfolio_id, BacktestRun.tenant_id == tenant_id)
+        .first()
+    )
+    if has_runs:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Cannot delete portfolio with existing backtest runs",
+        )
 
     record_audit(
         db,
