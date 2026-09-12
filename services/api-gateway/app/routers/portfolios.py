@@ -1,9 +1,11 @@
 """Portfolio management endpoints (tenant-scoped)."""
+
 from __future__ import annotations
 
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.auth import require_role
@@ -18,18 +20,34 @@ router = APIRouter(prefix="/tenants/{tenant_id}/portfolios", tags=["portfolios"]
 def _check_tenant_access(tenant_id: uuid.UUID, current_user: User) -> None:
     """Raise 403 if user is not platform admin and does not belong to the tenant."""
     if current_user.role != "PLATFORM_ADMIN" and current_user.tenant_id != tenant_id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
+        )
 
 
 @router.get("", response_model=list[PortfolioResponse])
 def list_portfolios(
     tenant_id: uuid.UUID,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role("PLATFORM_ADMIN", "TENANT_ADMIN", "TRADER", "RESEARCHER", "RISK_MANAGER", "VIEWER")),
+    current_user: User = Depends(
+        require_role(
+            "PLATFORM_ADMIN",
+            "TENANT_ADMIN",
+            "TRADER",
+            "RESEARCHER",
+            "RISK_MANAGER",
+            "VIEWER",
+        )
+    ),
 ):
     """List all portfolios for a tenant."""
     _check_tenant_access(tenant_id, current_user)
-    return db.query(Portfolio).filter(Portfolio.tenant_id == tenant_id).order_by(Portfolio.created_at).all()
+    return (
+        db.query(Portfolio)
+        .filter(Portfolio.tenant_id == tenant_id)
+        .order_by(Portfolio.created_at)
+        .all()
+    )
 
 
 @router.post("", response_model=PortfolioResponse, status_code=status.HTTP_201_CREATED)
@@ -44,7 +62,9 @@ def create_portfolio(
 
     tenant = db.query(Tenant).filter(Tenant.id == tenant_id).first()
     if not tenant:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tenant not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Tenant not found"
+        )
 
     portfolio = Portfolio(
         tenant_id=tenant_id,
@@ -75,14 +95,29 @@ def get_portfolio(
     tenant_id: uuid.UUID,
     portfolio_id: uuid.UUID,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role("PLATFORM_ADMIN", "TENANT_ADMIN", "TRADER", "RESEARCHER", "RISK_MANAGER", "VIEWER")),
+    current_user: User = Depends(
+        require_role(
+            "PLATFORM_ADMIN",
+            "TENANT_ADMIN",
+            "TRADER",
+            "RESEARCHER",
+            "RISK_MANAGER",
+            "VIEWER",
+        )
+    ),
 ):
     """Get a single portfolio."""
     _check_tenant_access(tenant_id, current_user)
 
-    portfolio = db.query(Portfolio).filter(Portfolio.id == portfolio_id, Portfolio.tenant_id == tenant_id).first()
+    portfolio = (
+        db.query(Portfolio)
+        .filter(Portfolio.id == portfolio_id, Portfolio.tenant_id == tenant_id)
+        .first()
+    )
     if not portfolio:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Portfolio not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Portfolio not found"
+        )
     return portfolio
 
 
@@ -97,9 +132,15 @@ def update_portfolio(
     """Update a portfolio."""
     _check_tenant_access(tenant_id, current_user)
 
-    portfolio = db.query(Portfolio).filter(Portfolio.id == portfolio_id, Portfolio.tenant_id == tenant_id).first()
+    portfolio = (
+        db.query(Portfolio)
+        .filter(Portfolio.id == portfolio_id, Portfolio.tenant_id == tenant_id)
+        .first()
+    )
     if not portfolio:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Portfolio not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Portfolio not found"
+        )
 
     before = {"name": portfolio.name, "trading_mode": portfolio.trading_mode}
     updates = body.model_dump(exclude_unset=True)
@@ -131,9 +172,15 @@ def delete_portfolio(
     """Delete a portfolio."""
     _check_tenant_access(tenant_id, current_user)
 
-    portfolio = db.query(Portfolio).filter(Portfolio.id == portfolio_id, Portfolio.tenant_id == tenant_id).first()
+    portfolio = (
+        db.query(Portfolio)
+        .filter(Portfolio.id == portfolio_id, Portfolio.tenant_id == tenant_id)
+        .first()
+    )
     if not portfolio:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Portfolio not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Portfolio not found"
+        )
 
     has_configs = (
         db.query(StrategyConfig)
@@ -165,5 +212,12 @@ def delete_portfolio(
         resource=f"portfolio:{portfolio_id}",
         before_state={"name": portfolio.name, "trading_mode": portfolio.trading_mode},
     )
-    db.delete(portfolio)
-    db.commit()
+    try:
+        db.delete(portfolio)
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Cannot delete: portfolio has dependent resources",
+        )

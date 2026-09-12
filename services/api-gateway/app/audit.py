@@ -1,4 +1,5 @@
 """Audit event recording helper."""
+
 from __future__ import annotations
 
 import uuid

@@ -47,16 +47,16 @@ services:
 
   redis:
     <<: *service-defaults
-    image: redis:7-alpine
-    container_name: aegis-redis
+    image: valkey/valkey:8-alpine
+    container_name: aegis-valkey
     networks:
       - internal
     volumes:
       - redis-data:/data
       - ./infra/redis/redis.conf:/usr/local/etc/redis/redis.conf
-    command: redis-server /usr/local/etc/redis/redis.conf
+    command: valkey-server /usr/local/etc/redis/redis.conf
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "valkey-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
