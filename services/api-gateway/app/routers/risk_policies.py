@@ -160,7 +160,10 @@ def update_risk_policy(
     if "portfolio_id" in updates and updates["portfolio_id"] is not None:
         portfolio = (
             db.query(Portfolio)
-            .filter(Portfolio.id == updates["portfolio_id"], Portfolio.tenant_id == tenant_id)
+            .filter(
+                Portfolio.id == updates["portfolio_id"],
+                Portfolio.tenant_id == tenant_id,
+            )
             .first()
         )
         if not portfolio:
