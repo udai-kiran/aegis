@@ -69,15 +69,15 @@ def _apply_fill(
         else:  # SELL
             new_qty = float(position.quantity) - filled_quantity
             if new_qty <= 0:
-                position.realized_pnl = float(position.realized_pnl) + filled_quantity * (
-                    avg_fill_price - float(position.avg_entry_price)
-                )
+                position.realized_pnl = float(
+                    position.realized_pnl
+                ) + filled_quantity * (avg_fill_price - float(position.avg_entry_price))
                 db.delete(position)
                 position = None
             else:
-                position.realized_pnl = float(position.realized_pnl) + filled_quantity * (
-                    avg_fill_price - float(position.avg_entry_price)
-                )
+                position.realized_pnl = float(
+                    position.realized_pnl
+                ) + filled_quantity * (avg_fill_price - float(position.avg_entry_price))
                 position.quantity = new_qty
 
         if position is not None:

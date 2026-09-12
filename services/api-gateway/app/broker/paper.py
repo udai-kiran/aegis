@@ -1,4 +1,5 @@
 """Paper broker: simulated order execution for backtests and dry-runs."""
+
 from __future__ import annotations
 
 import logging
@@ -30,9 +31,8 @@ class PaperBroker(Broker):
         if request.order_type == "LIMIT":
             if price is None:
                 return self._reject(request, "Limit price not provided")
-            fills = (
-                (request.side == "BUY" and price >= request.price)
-                or (request.side == "SELL" and price <= request.price)
+            fills = (request.side == "BUY" and price >= request.price) or (
+                request.side == "SELL" and price <= request.price
             )
             if not fills:
                 return self._reject(request, "Limit price not met")
@@ -40,7 +40,11 @@ class PaperBroker(Broker):
             return self._reject(request, "Market price not provided")
 
         adjustment = self.slippage_bps / 10000
-        fill_price = price * (1 + adjustment) if request.side == "BUY" else price * (1 - adjustment)
+        fill_price = (
+            price * (1 + adjustment)
+            if request.side == "BUY"
+            else price * (1 - adjustment)
+        )
 
         result = OrderResult(
             order_id=uuid.uuid4(),
@@ -61,7 +65,9 @@ class PaperBroker(Broker):
 
     @staticmethod
     def _reject(request: OrderRequest, reason: str) -> OrderResult:
-        logger.warning("Paper order rejected: %s %s — %s", request.side, request.symbol, reason)
+        logger.warning(
+            "Paper order rejected: %s %s — %s", request.side, request.symbol, reason
+        )
         return OrderResult(
             order_id=uuid.uuid4(),
             status="REJECTED",
@@ -75,7 +81,9 @@ class PaperBroker(Broker):
         """Paper orders fill instantly, so there is never anything to cancel."""
         return False
 
-    def get_positions(self, tenant_id: uuid.UUID, portfolio_id: uuid.UUID) -> list[dict]:
+    def get_positions(
+        self, tenant_id: uuid.UUID, portfolio_id: uuid.UUID
+    ) -> list[dict]:
         from app.models import Position  # avoid circular imports
 
         positions = (
@@ -92,7 +100,9 @@ class PaperBroker(Broker):
                 "exchange": p.exchange,
                 "quantity": float(p.quantity),
                 "avg_entry_price": float(p.avg_entry_price),
-                "unrealized_pnl": float(p.unrealized_pnl) if p.unrealized_pnl is not None else None,
+                "unrealized_pnl": float(p.unrealized_pnl)
+                if p.unrealized_pnl is not None
+                else None,
             }
             for p in positions
         ]

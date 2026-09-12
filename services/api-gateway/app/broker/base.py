@@ -1,4 +1,5 @@
 """Abstract broker interface and order datatypes."""
+
 from __future__ import annotations
 
 import abc
@@ -45,5 +46,7 @@ class Broker(abc.ABC):
         """Cancel an open order. Returns True if cancellation succeeded."""
 
     @abc.abstractmethod
-    def get_positions(self, tenant_id: uuid.UUID, portfolio_id: uuid.UUID) -> list[dict]:
+    def get_positions(
+        self, tenant_id: uuid.UUID, portfolio_id: uuid.UUID
+    ) -> list[dict]:
         """Return open positions for a portfolio as a list of dicts."""

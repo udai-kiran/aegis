@@ -184,7 +184,10 @@ def delete_portfolio(
 
     has_configs = (
         db.query(StrategyConfig)
-        .filter(StrategyConfig.portfolio_id == portfolio_id, StrategyConfig.tenant_id == tenant_id)
+        .filter(
+            StrategyConfig.portfolio_id == portfolio_id,
+            StrategyConfig.tenant_id == tenant_id,
+        )
         .first()
     )
     if has_configs:
@@ -195,7 +198,9 @@ def delete_portfolio(
 
     has_runs = (
         db.query(BacktestRun)
-        .filter(BacktestRun.portfolio_id == portfolio_id, BacktestRun.tenant_id == tenant_id)
+        .filter(
+            BacktestRun.portfolio_id == portfolio_id, BacktestRun.tenant_id == tenant_id
+        )
         .first()
     )
     if has_runs:

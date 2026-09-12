@@ -1,4 +1,5 @@
 """Backtest engine: simulates a strategy over historical OHLCV bars."""
+
 from __future__ import annotations
 
 import logging
@@ -84,7 +85,9 @@ def run_backtest(db: Session, backtest_run: BacktestRun) -> dict:
 
     # 9. Equity simulation setup
     portfolio = db.get(Portfolio, backtest_run.portfolio_id)
-    initial_capital = float(portfolio.starting_capital) if portfolio is not None else 0.0
+    initial_capital = (
+        float(portfolio.starting_capital) if portfolio is not None else 0.0
+    )
     lookback = int(parameters.get("lookback", 20))
 
     cash = initial_capital
@@ -98,7 +101,9 @@ def run_backtest(db: Session, backtest_run: BacktestRun) -> dict:
     for i in range(lookback, n_bars):
         window = prices.iloc[: i + 1]
         portfolio_state = {"cash": cash, "position": position}
-        signals: list[StrategySignal] = strategy.on_market_event(context, window, portfolio_state)
+        signals: list[StrategySignal] = strategy.on_market_event(
+            context, window, portfolio_state
+        )
 
         timestamp: datetime = prices["timestamp"].iloc[i]
         close_price = float(prices["close"].iloc[i])
@@ -112,7 +117,10 @@ def run_backtest(db: Session, backtest_run: BacktestRun) -> dict:
                     cash -= shares * close_price
                     position += shares
                     if open_trade is None:
-                        open_trade = {"entry_price": close_price, "entry_date": timestamp}
+                        open_trade = {
+                            "entry_price": close_price,
+                            "entry_date": timestamp,
+                        }
             elif value < 0 and position > 0:
                 shares = min(position, abs(position * value))
                 if position - shares < 1e-9:
@@ -123,7 +131,8 @@ def run_backtest(db: Session, backtest_run: BacktestRun) -> dict:
                     if open_trade is not None:
                         trades.append(
                             {
-                                "pnl": (close_price - open_trade["entry_price"]) * shares,
+                                "pnl": (close_price - open_trade["entry_price"])
+                                * shares,
                                 "entry_date": open_trade["entry_date"],
                                 "exit_date": timestamp,
                             }

@@ -1,4 +1,5 @@
 """Strategy abstraction layer: base classes and built-in strategy registry."""
+
 from __future__ import annotations
 
 from app.strategies.base import Strategy, StrategyContext, StrategySignal

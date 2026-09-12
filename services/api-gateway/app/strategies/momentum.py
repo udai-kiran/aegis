@@ -1,4 +1,5 @@
 """Momentum strategy: go long/short when lookback returns exceed a threshold."""
+
 from __future__ import annotations
 
 import math
