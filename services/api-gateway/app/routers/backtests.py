@@ -1,4 +1,5 @@
 """Backtest run endpoints (tenant-scoped)."""
+
 from __future__ import annotations
 
 import uuid
@@ -19,7 +20,9 @@ router = APIRouter(prefix="/tenants/{tenant_id}/backtests", tags=["backtests"])
 def _check_tenant_access(tenant_id: uuid.UUID, current_user: User) -> None:
     """Raise 403 if user is not platform admin and does not belong to the tenant."""
     if current_user.role != "PLATFORM_ADMIN" and current_user.tenant_id != tenant_id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
+        )
 
 
 @router.post("", response_model=BacktestResponse, status_code=status.HTTP_201_CREATED)
@@ -27,18 +30,25 @@ def submit_backtest(
     tenant_id: uuid.UUID,
     body: BacktestCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role("PLATFORM_ADMIN", "TENANT_ADMIN", "RESEARCHER")),
+    current_user: User = Depends(
+        require_role("PLATFORM_ADMIN", "TENANT_ADMIN", "RESEARCHER")
+    ),
 ):
     """Submit a backtest run for a strategy config owned by the tenant."""
     _check_tenant_access(tenant_id, current_user)
 
     config = (
         db.query(StrategyConfig)
-        .filter(StrategyConfig.id == body.strategy_config_id, StrategyConfig.tenant_id == tenant_id)
+        .filter(
+            StrategyConfig.id == body.strategy_config_id,
+            StrategyConfig.tenant_id == tenant_id,
+        )
         .first()
     )
     if not config:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Strategy config not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Strategy config not found"
+        )
 
     if body.start_date >= body.end_date:
         raise HTTPException(
@@ -85,7 +95,16 @@ def list_backtests(
     portfolio_id: uuid.UUID | None = Query(default=None),
     backtest_status: str | None = Query(default=None, alias="status"),
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role("PLATFORM_ADMIN", "TENANT_ADMIN", "TRADER", "RESEARCHER", "RISK_MANAGER", "VIEWER")),
+    current_user: User = Depends(
+        require_role(
+            "PLATFORM_ADMIN",
+            "TENANT_ADMIN",
+            "TRADER",
+            "RESEARCHER",
+            "RISK_MANAGER",
+            "VIEWER",
+        )
+    ),
 ):
     """List backtest runs for a tenant, optionally filtered by portfolio or status."""
     _check_tenant_access(tenant_id, current_user)
@@ -103,7 +122,16 @@ def get_backtest(
     tenant_id: uuid.UUID,
     backtest_id: uuid.UUID,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role("PLATFORM_ADMIN", "TENANT_ADMIN", "TRADER", "RESEARCHER", "RISK_MANAGER", "VIEWER")),
+    current_user: User = Depends(
+        require_role(
+            "PLATFORM_ADMIN",
+            "TENANT_ADMIN",
+            "TRADER",
+            "RESEARCHER",
+            "RISK_MANAGER",
+            "VIEWER",
+        )
+    ),
 ):
     """Get a single backtest run belonging to the tenant."""
     _check_tenant_access(tenant_id, current_user)
@@ -114,5 +142,7 @@ def get_backtest(
         .first()
     )
     if not run:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Backtest not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Backtest not found"
+        )
     return run
