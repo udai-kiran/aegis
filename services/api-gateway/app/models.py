@@ -62,6 +62,8 @@ class Tenant(Base):
     positions: Mapped[list[Position]] = relationship()
     orders: Mapped[list[Order]] = relationship()
     broker_accounts: Mapped[list[BrokerAccount]] = relationship()
+    ai_decisions: Mapped[list[AIDecision]] = relationship()
+    shadow_results: Mapped[list[ShadowResult]] = relationship()
 
 
 class User(Base):
@@ -458,4 +460,131 @@ class TradeIntent(Base):
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow, onupdate=_utcnow
+    )
+
+
+class MarketRegime(Base):
+    """Shared market regime classification (not tenant-scoped per PRD §28)."""
+
+    __tablename__ = "market_regimes"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=_new_uuid
+    )
+    regime_label: Mapped[str] = mapped_column(String(50), nullable=False)
+    features: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    confidence: Mapped[float] = mapped_column(Numeric(10, 4), nullable=False)
+    symbol: Mapped[str] = mapped_column(String(50), nullable=False)
+    exchange: Mapped[str] = mapped_column(String(20), nullable=False, default="NSE")
+    timeframe: Mapped[str] = mapped_column(String(10), nullable=False, default="1d")
+    computed_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow
+    )
+
+
+class StrategyHealthScore(Base):
+    """Per-tenant strategy health scoring (tenant-isolated per PRD §33)."""
+
+    __tablename__ = "strategy_health_scores"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=_new_uuid
+    )
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False
+    )
+    strategy_config_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("strategy_configs.id"), nullable=False
+    )
+    portfolio_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("portfolios.id"), nullable=False
+    )
+    win_rate: Mapped[float] = mapped_column(Numeric(10, 4), nullable=False, default=0)
+    avg_return: Mapped[float] = mapped_column(Numeric(10, 4), nullable=False, default=0)
+    sharpe_ratio: Mapped[float | None] = mapped_column(Numeric(10, 4), nullable=True)
+    max_drawdown: Mapped[float | None] = mapped_column(Numeric(10, 4), nullable=True)
+    total_trades: Mapped[int] = mapped_column(nullable=False, default=0)
+    recent_pnl: Mapped[float] = mapped_column(Numeric(20, 4), nullable=False, default=0)
+    health_score: Mapped[float] = mapped_column(
+        Numeric(10, 4), nullable=False, default=0
+    )
+    health_status: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="HEALTHY"
+    )
+    evaluated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow
+    )
+
+
+class AIDecision(Base):
+    """Per-tenant AI strategy allocation decision (tenant-isolated)."""
+
+    __tablename__ = "ai_decisions"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=_new_uuid
+    )
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False
+    )
+    portfolio_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("portfolios.id"), nullable=False
+    )
+    market_regime_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("market_regimes.id"), nullable=True
+    )
+    strategy_weights: Mapped[dict] = mapped_column(JSON, nullable=False)
+    cash_weight: Mapped[float] = mapped_column(
+        Numeric(10, 4), nullable=False, default=0
+    )
+    confidence: Mapped[float] = mapped_column(Numeric(10, 4), nullable=False, default=0)
+    mode: Mapped[str] = mapped_column(String(10), nullable=False, default="LIVE")
+    reward_params: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    context_snapshot: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    explanation: Mapped[str | None] = mapped_column(String(2000), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow
+    )
+
+
+class ShadowResult(Base):
+    """Shadow evaluation result for counterfactual analysis."""
+
+    __tablename__ = "shadow_results"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=_new_uuid
+    )
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False
+    )
+    portfolio_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("portfolios.id"), nullable=False
+    )
+    ai_decision_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("ai_decisions.id"), nullable=False
+    )
+    strategy_config_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("strategy_configs.id"), nullable=False
+    )
+    hypothetical_return: Mapped[float] = mapped_column(
+        Numeric(10, 4), nullable=False, default=0
+    )
+    actual_return: Mapped[float] = mapped_column(
+        Numeric(10, 4), nullable=False, default=0
+    )
+    evaluation_start: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+    evaluation_end: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow
     )
