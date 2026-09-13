@@ -12,6 +12,7 @@ from app.routers import backtests, ohlcv, strategies
 from app.routers import risk_policies, positions, orders, paper_trading, dashboard
 from app.routers import broker_accounts
 from app.routers import kill_switch, execution
+from app.routers import market_regime, strategy_health, ai_allocation
 
 
 @asynccontextmanager
@@ -48,3 +49,6 @@ app.include_router(dashboard.router, prefix="/api")
 app.include_router(broker_accounts.router, prefix="/api")
 app.include_router(kill_switch.router, prefix="/api")
 app.include_router(execution.router, prefix="/api")
+app.include_router(market_regime.router, prefix="/api")
+app.include_router(strategy_health.router, prefix="/api")
+app.include_router(ai_allocation.router, prefix="/api")
