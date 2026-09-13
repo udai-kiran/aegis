@@ -328,6 +328,7 @@ class OrderResponse(BaseModel):
     status: str
     reject_reason: str | None
     source: str
+    broker_account_id: uuid.UUID | None = None
     risk_decision: dict | None
     created_at: datetime
     updated_at: datetime
@@ -387,3 +388,83 @@ class PortfolioDashboard(BaseModel):
     positions_count: int
     open_orders_count: int
     risk_status: str
+
+
+# --- BrokerAccount ---
+class BrokerAccountCreate(BaseModel):
+    broker_type: str = Field(max_length=30)
+    display_name: str = Field(min_length=1, max_length=255)
+    credentials: dict | None = None
+    credential_metadata: dict | None = None
+    is_primary: bool = False
+
+
+class BrokerAccountUpdate(BaseModel):
+    display_name: str | None = None
+    credentials: dict | None = None
+    credential_metadata: dict | None = None
+    status: str | None = None
+    is_primary: bool | None = None
+
+
+class BrokerAccountResponse(BaseModel):
+    id: uuid.UUID
+    tenant_id: uuid.UUID
+    broker_type: str
+    display_name: str
+    credential_metadata: dict | None = None
+    status: str
+    is_primary: bool
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+# --- Execution ---
+class ExecutionRequest(BaseModel):
+    portfolio_id: uuid.UUID
+    broker_account_id: uuid.UUID
+    symbol: str = Field(max_length=50)
+    exchange: str = Field(default="NSE", max_length=20)
+    side: str = Field(max_length=10, pattern="^(BUY|SELL)$")
+    order_type: str = Field(default="MARKET", max_length=20)
+    quantity: float = Field(gt=0)
+    price: float | None = None
+
+
+class ExecutionResponse(BaseModel):
+    order_id: uuid.UUID
+    broker_account_id: uuid.UUID
+    status: str
+    filled_quantity: float
+    avg_fill_price: float | None
+    reject_reason: str | None = None
+    risk_decision: dict | None = None
+    created_at: datetime
+
+
+# --- KillSwitch ---
+class KillSwitchAction(BaseModel):
+    scope: str
+    target_id: uuid.UUID | None = None
+    action: str = Field(pattern="^(HALT|RESUME)$")
+    reason: str | None = None
+
+
+class KillSwitchStatus(BaseModel):
+    tenant_halted: bool
+    portfolios_halted: list[uuid.UUID] = Field(default_factory=list)
+    broker_accounts_halted: list[uuid.UUID] = Field(default_factory=list)
+
+
+# --- Reconciliation ---
+class ReconciliationResult(BaseModel):
+    broker_account_id: uuid.UUID
+    status: str
+    matched_positions: int = 0
+    mismatched_positions: int = 0
+    internal_only: list[dict] = Field(default_factory=list)
+    broker_only: list[dict] = Field(default_factory=list)
+    mismatches: list[dict] = Field(default_factory=list)
+    reconciled_at: datetime
