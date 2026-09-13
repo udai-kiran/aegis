@@ -67,6 +67,21 @@ def compute_allocation(
     if not configs:
         return _empty_allocation("No strategy configs for portfolio", mode=mode)
 
+    # 1b. Gather recent news sentiment context
+    from app.models import NewsItem
+
+    recent_news = (
+        db.query(NewsItem)
+        .filter(NewsItem.tenant_id == tenant_id)
+        .order_by(NewsItem.published_at.desc())
+        .limit(10)
+        .all()
+    )
+    news_sentiment = None
+    if recent_news:
+        scores = [float(n.sentiment_score) for n in recent_news]
+        news_sentiment = round(sum(scores) / len(scores), 4)
+
     # 2. Compute regime from most recent OHLCV data
     # Find most recent symbol in portfolio OHLCV data
     recent_bar = (
@@ -116,12 +131,16 @@ def compute_allocation(
     health_scores["CASH"] = 50.0  # Neutral health for cash
 
     # 4. Run bandit
-    bandit = ThompsonSamplingBandit(arms=arm_names)
+    bandit = ThompsonSamplingBandit.load_or_create(
+        db, tenant_id, portfolio_id, arm_names
+    )
     regime_features = regime_result["features"] if regime_result else {}
     weights = bandit.select(
         regime_features=regime_features,
         health_scores=health_scores,
     )
+
+    bandit.save_state(db, tenant_id, portfolio_id)
 
     # Extract cash weight
     cash_weight = weights.pop("CASH", 0.0)
@@ -131,6 +150,8 @@ def compute_allocation(
     context_snapshot = {
         "market_regime": regime_result if regime_result else {},
         "health_scores": health_details,
+        "news_sentiment": news_sentiment,
+        "news_count": len(recent_news),
         "portfolio": {
             "current_equity": float(portfolio.current_equity),
             "cash": float(portfolio.cash),
@@ -141,6 +162,10 @@ def compute_allocation(
     explanation_parts = []
     regime_label = regime_result["regime_label"] if regime_result else "UNKNOWN"
     explanation_parts.append(f"Market regime: {regime_label}.")
+    if news_sentiment is not None:
+        explanation_parts.append(
+            f"News sentiment: {news_sentiment:+.2f} ({len(recent_news)} items)."
+        )
 
     for config_id, weight in strategy_weights.items():
         health = health_details.get(config_id, {})

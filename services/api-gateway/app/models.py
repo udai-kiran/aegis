@@ -64,6 +64,10 @@ class Tenant(Base):
     broker_accounts: Mapped[list[BrokerAccount]] = relationship()
     ai_decisions: Mapped[list[AIDecision]] = relationship()
     shadow_results: Mapped[list[ShadowResult]] = relationship()
+    news_items: Mapped[list[NewsItem]] = relationship()
+    llm_supervisor_actions: Mapped[list[LLMSupervisorAction]] = relationship()
+    degradation_alerts: Mapped[list[DegradationAlert]] = relationship()
+    bandit_arm_states: Mapped[list[BanditArmState]] = relationship()
 
 
 class User(Base):
@@ -585,6 +589,120 @@ class ShadowResult(Base):
     evaluation_end: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False
     )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow
+    )
+
+
+class LLMSupervisorAction(Base):
+    """Audited LLM supervisor recommendation (tenant-isolated, PRD §35)."""
+
+    __tablename__ = "llm_supervisor_actions"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=_new_uuid
+    )
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False
+    )
+    portfolio_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("portfolios.id"), nullable=False
+    )
+    decision_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("ai_decisions.id"), nullable=True
+    )
+    action_type: Mapped[str] = mapped_column(String(30), nullable=False)
+    recommendation: Mapped[dict] = mapped_column(JSON, nullable=False)
+    reasoning: Mapped[str | None] = mapped_column(String(2000), nullable=True)
+    confidence: Mapped[float] = mapped_column(Numeric(10, 4), nullable=False, default=0)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="PENDING")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow
+    )
+
+
+class NewsItem(Base):
+    """Market news item with sentiment score (tenant-scoped)."""
+
+    __tablename__ = "news_items"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=_new_uuid
+    )
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False
+    )
+    headline: Mapped[str] = mapped_column(String(500), nullable=False)
+    source: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    url: Mapped[str | None] = mapped_column(String(1000), nullable=True)
+    symbols: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    sentiment_score: Mapped[float] = mapped_column(
+        Numeric(10, 4), nullable=False, default=0
+    )
+    sentiment_label: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="NEUTRAL"
+    )
+    published_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow
+    )
+
+
+class BanditArmState(Base):
+    """Persisted bandit arm parameters per tenant/portfolio."""
+
+    __tablename__ = "bandit_arm_states"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "portfolio_id", "arm_name", name="uq_bandit_arm"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=_new_uuid
+    )
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False
+    )
+    portfolio_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("portfolios.id"), nullable=False
+    )
+    arm_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    alpha: Mapped[float] = mapped_column(Numeric(10, 4), nullable=False, default=1.0)
+    beta_param: Mapped[float] = mapped_column(
+        Numeric(10, 4), nullable=False, default=1.0
+    )
+    total_rewards: Mapped[float] = mapped_column(
+        Numeric(20, 4), nullable=False, default=0
+    )
+    total_pulls: Mapped[int] = mapped_column(nullable=False, default=0)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, onupdate=_utcnow
+    )
+
+
+class DegradationAlert(Base):
+    """Strategy degradation detection alert (tenant-isolated)."""
+
+    __tablename__ = "degradation_alerts"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=_new_uuid
+    )
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False
+    )
+    strategy_config_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("strategy_configs.id"), nullable=False
+    )
+    portfolio_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("portfolios.id"), nullable=False
+    )
+    alert_type: Mapped[str] = mapped_column(String(30), nullable=False)
+    severity: Mapped[str] = mapped_column(String(20), nullable=False)
+    details: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    auto_action_taken: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    acknowledged: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow
     )
