@@ -15,6 +15,10 @@ services:
       - "9000:9000"
       - "9001:9001"
 
+  web-ui:
+    ports:
+      - "3000:80"
+
   api-gateway:
     ports:
       - "8000:8000"
