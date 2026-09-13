@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import logging
+import uuid
 from dataclasses import dataclass, field
 
 import numpy as np
+from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +39,45 @@ class ThompsonSamplingBandit:
         if arms is None:
             arms = ["MOMENTUM", "MEAN_REVERSION", "BREAKOUT", "CASH"]
         self.state = BanditState(arms=[BanditArm(name=name) for name in arms])
+
+    @classmethod
+    def load_or_create(
+        cls,
+        db: Session,
+        tenant_id: uuid.UUID,
+        portfolio_id: uuid.UUID,
+        arm_names: list[str],
+    ) -> ThompsonSamplingBandit:
+        """Load persisted arm state or create fresh arms.
+
+        Args:
+            db: Database session.
+            tenant_id: Tenant scope.
+            portfolio_id: Portfolio scope.
+            arm_names: Expected arm names (creates missing ones).
+
+        Returns:
+            A ThompsonSamplingBandit with state from DB.
+        """
+        from app.models import BanditArmState
+
+        bandit = cls(arms=arm_names)
+
+        for arm in bandit.state.arms:
+            db_arm = (
+                db.query(BanditArmState)
+                .filter(
+                    BanditArmState.tenant_id == tenant_id,
+                    BanditArmState.portfolio_id == portfolio_id,
+                    BanditArmState.arm_name == arm.name,
+                )
+                .first()
+            )
+            if db_arm is not None:
+                arm.alpha = float(db_arm.alpha)
+                arm.beta = float(db_arm.beta_param)
+
+        return bandit
 
     def select(
         self,
@@ -110,3 +151,38 @@ class ThompsonSamplingBandit:
         total_obs = sum(arm.alpha + arm.beta - 2.0 for arm in self.state.arms)
         # Confidence grows with observations, capped at 0.95
         return round(min(0.3 + total_obs * 0.01, 0.95), 4)
+
+    def save_state(
+        self,
+        db: Session,
+        tenant_id: uuid.UUID,
+        portfolio_id: uuid.UUID,
+    ) -> None:
+        """Persist current arm parameters to the database."""
+        from app.models import BanditArmState
+
+        for arm in self.state.arms:
+            db_arm = (
+                db.query(BanditArmState)
+                .filter(
+                    BanditArmState.tenant_id == tenant_id,
+                    BanditArmState.portfolio_id == portfolio_id,
+                    BanditArmState.arm_name == arm.name,
+                )
+                .first()
+            )
+            if db_arm is None:
+                db_arm = BanditArmState(
+                    tenant_id=tenant_id,
+                    portfolio_id=portfolio_id,
+                    arm_name=arm.name,
+                    alpha=arm.alpha,
+                    beta_param=arm.beta,
+                    total_rewards=0,
+                    total_pulls=0,
+                )
+                db.add(db_arm)
+            else:
+                db_arm.alpha = arm.alpha
+                db_arm.beta_param = arm.beta
+            db.flush()

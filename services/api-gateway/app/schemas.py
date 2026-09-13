@@ -576,3 +576,128 @@ class ShadowResultResponse(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+# --- LLM Supervisor (Phase 6) ---
+
+
+class SupervisorRecommendRequest(BaseModel):
+    portfolio_id: uuid.UUID
+    decision_id: uuid.UUID | None = None
+
+
+class SupervisorActionResponse(BaseModel):
+    id: uuid.UUID
+    tenant_id: uuid.UUID
+    portfolio_id: uuid.UUID
+    decision_id: uuid.UUID | None = None
+    action_type: str
+    recommendation: dict
+    reasoning: str | None = None
+    confidence: float
+    status: str
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+# --- News (Phase 6) ---
+
+
+class NewsItemCreate(BaseModel):
+    headline: str = Field(min_length=1, max_length=500)
+    source: str | None = Field(default=None, max_length=100)
+    url: str | None = Field(default=None, max_length=1000)
+    symbols: list[str] = Field(default_factory=list)
+    sentiment_score: float = Field(ge=-1.0, le=1.0)
+    sentiment_label: str = Field(pattern="^(POSITIVE|NEGATIVE|NEUTRAL)$")
+    published_at: datetime
+
+
+class NewsItemResponse(BaseModel):
+    id: uuid.UUID
+    tenant_id: uuid.UUID
+    headline: str
+    source: str | None = None
+    url: str | None = None
+    symbols: list | None = None
+    sentiment_score: float
+    sentiment_label: str
+    published_at: datetime
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+# --- Counterfactual (Phase 6) ---
+
+
+class CounterfactualRequest(BaseModel):
+    ai_decision_id: uuid.UUID
+    evaluation_start: datetime
+    evaluation_end: datetime
+
+
+class CounterfactualComparisonItem(BaseModel):
+    strategy_config_id: uuid.UUID
+    strategy_name: str
+    was_chosen: bool
+    weight: float
+    hypothetical_return: float
+
+
+class CounterfactualResponse(BaseModel):
+    ai_decision_id: uuid.UUID
+    actual_weighted_return: float
+    best_alternative_return: float
+    regret: float
+    comparisons: list[CounterfactualComparisonItem]
+    evaluation_start: datetime
+    evaluation_end: datetime
+
+
+# --- Reward / Adaptive Allocation (Phase 6) ---
+
+
+class RewardRequest(BaseModel):
+    portfolio_id: uuid.UUID
+    arm_name: str = Field(max_length=255)
+    reward: float = Field(ge=0.0, le=1.0)
+
+
+class RewardResponse(BaseModel):
+    arm_name: str
+    alpha: float
+    beta_param: float
+    total_pulls: int
+    updated_at: datetime
+
+
+# --- Degradation Detection (Phase 6) ---
+
+
+class DegradationCheckRequest(BaseModel):
+    strategy_config_id: uuid.UUID
+    portfolio_id: uuid.UUID
+    auto_demote: bool = False
+
+
+class DegradationAlertResponse(BaseModel):
+    id: uuid.UUID
+    tenant_id: uuid.UUID
+    strategy_config_id: uuid.UUID
+    portfolio_id: uuid.UUID
+    alert_type: str
+    severity: str
+    details: dict | None = None
+    auto_action_taken: str | None = None
+    acknowledged: bool
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class DegradationCheckResponse(BaseModel):
+    is_degrading: bool
+    alerts: list[DegradationAlertResponse]
+    health_trend: list[float]

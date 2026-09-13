@@ -12,7 +12,7 @@ Multi-tenant, AI-assisted algorithmic trading platform.
 | **Phase 3** | Live data, paper trading, portfolio/risk | ✅ Done ([PR #5](https://github.com/udai-kiran/aegis/pull/5)) |
 | **Phase 4** | Broker execution, reconciliation | ✅ Done ([PR #7](https://github.com/udai-kiran/aegis/pull/7)) |
 | **Phase 5** | AI strategy selection | ✅ Done ([PR #8](https://github.com/udai-kiran/aegis/pull/8)) |
-| **Phase 6** | LLM supervisor, advanced AI | 🔲 Not started |
+| **Phase 6** | LLM supervisor, advanced AI | ✅ Done |
 
 ## Quick Start
 

@@ -14,6 +14,8 @@ from app.models import AIDecision, ShadowResult, User
 from app.schemas import (
     AIDecisionResponse,
     AllocationRequest,
+    RewardRequest,
+    RewardResponse,
     ShadowResultCreate,
     ShadowResultResponse,
 )
@@ -230,4 +232,78 @@ def list_shadow_results(
         .filter(ShadowResult.tenant_id == tenant_id)
         .order_by(ShadowResult.created_at.desc())
         .all()
+    )
+
+
+@router.post("/reward", response_model=RewardResponse)
+def record_reward(
+    tenant_id: uuid.UUID,
+    body: RewardRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(
+        require_role("PLATFORM_ADMIN", "TENANT_ADMIN", "RESEARCHER")
+    ),
+):
+    """Record an observed reward to update bandit arm parameters."""
+    _check_tenant_access(tenant_id, current_user)
+
+    from app.models import Portfolio, BanditArmState
+
+    portfolio = (
+        db.query(Portfolio)
+        .filter(Portfolio.id == body.portfolio_id, Portfolio.tenant_id == tenant_id)
+        .first()
+    )
+    if not portfolio:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Portfolio not found"
+        )
+
+    # Get or create the arm state
+    arm_state = (
+        db.query(BanditArmState)
+        .filter(
+            BanditArmState.tenant_id == tenant_id,
+            BanditArmState.portfolio_id == body.portfolio_id,
+            BanditArmState.arm_name == body.arm_name,
+        )
+        .first()
+    )
+    if arm_state is None:
+        arm_state = BanditArmState(
+            tenant_id=tenant_id,
+            portfolio_id=body.portfolio_id,
+            arm_name=body.arm_name,
+        )
+        db.add(arm_state)
+        db.flush()
+
+    # Update arm with reward (same logic as ThompsonSamplingBandit.update)
+    r = max(0.0, min(1.0, body.reward))
+    arm_state.alpha = float(arm_state.alpha) + r
+    arm_state.beta_param = float(arm_state.beta_param) + (1.0 - r)
+    arm_state.total_rewards = float(arm_state.total_rewards) + r
+    arm_state.total_pulls = arm_state.total_pulls + 1
+
+    record_audit(
+        db,
+        action="ai_reward_recorded",
+        tenant_id=tenant_id,
+        user_id=current_user.id,
+        resource=f"bandit_arm:{arm_state.arm_name}",
+        after_state={
+            "arm_name": body.arm_name,
+            "reward": body.reward,
+            "alpha": float(arm_state.alpha),
+            "beta_param": float(arm_state.beta_param),
+        },
+    )
+    db.commit()
+    db.refresh(arm_state)
+    return RewardResponse(
+        arm_name=arm_state.arm_name,
+        alpha=float(arm_state.alpha),
+        beta_param=float(arm_state.beta_param),
+        total_pulls=arm_state.total_pulls,
+        updated_at=arm_state.updated_at,
     )

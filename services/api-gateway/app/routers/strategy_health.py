@@ -11,7 +11,12 @@ from app.auth import require_role
 from app.audit import record_audit
 from app.database import get_db
 from app.models import StrategyHealthScore, User
-from app.schemas import HealthEvaluateRequest, StrategyHealthResponse
+from app.schemas import (
+    DegradationCheckRequest,
+    DegradationCheckResponse,
+    HealthEvaluateRequest,
+    StrategyHealthResponse,
+)
 
 router = APIRouter(
     prefix="/tenants/{tenant_id}/strategy-health", tags=["strategy-health"]
@@ -149,3 +154,77 @@ def get_health_score(
             status_code=status.HTTP_404_NOT_FOUND, detail="Health score not found"
         )
     return health
+
+
+@router.post("/degradation-check", response_model=DegradationCheckResponse)
+def degradation_check(
+    tenant_id: uuid.UUID,
+    body: DegradationCheckRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(
+        require_role("PLATFORM_ADMIN", "TENANT_ADMIN", "RESEARCHER")
+    ),
+):
+    """Check for strategy degradation and optionally auto-demote."""
+    _check_tenant_access(tenant_id, current_user)
+
+    from app.models import Portfolio, StrategyConfig
+
+    config = (
+        db.query(StrategyConfig)
+        .filter(
+            StrategyConfig.id == body.strategy_config_id,
+            StrategyConfig.tenant_id == tenant_id,
+        )
+        .first()
+    )
+    if not config:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Strategy config not found",
+        )
+    portfolio = (
+        db.query(Portfolio)
+        .filter(Portfolio.id == body.portfolio_id, Portfolio.tenant_id == tenant_id)
+        .first()
+    )
+    if not portfolio:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Portfolio not found"
+        )
+    if config.portfolio_id != body.portfolio_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Strategy config does not belong to specified portfolio",
+        )
+
+    from app.intelligence.degradation import check_degradation
+
+    result = check_degradation(
+        db,
+        tenant_id,
+        body.strategy_config_id,
+        body.portfolio_id,
+        auto_demote=body.auto_demote,
+    )
+
+    # Only audit a demotion if one actually occurred (check the last alert)
+    actual_action = None
+    if body.auto_demote and result["is_degrading"] and result["alerts"]:
+        actual_action = result["alerts"][-1].get("auto_action_taken")
+    if actual_action:
+        record_audit(
+            db,
+            action="strategy_auto_demoted",
+            tenant_id=tenant_id,
+            user_id=current_user.id,
+            resource=f"strategy_config:{body.strategy_config_id}",
+            after_state={
+                "is_degrading": True,
+                "auto_action": actual_action,
+                "alerts_count": len(result["alerts"]),
+            },
+        )
+
+    db.commit()
+    return result
