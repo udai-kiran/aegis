@@ -10,6 +10,8 @@ from app.database import Base, engine
 from app.routers import auth, tenants, users, portfolios, audit
 from app.routers import backtests, ohlcv, strategies
 from app.routers import risk_policies, positions, orders, paper_trading, dashboard
+from app.routers import broker_accounts
+from app.routers import kill_switch, execution
 
 
 @asynccontextmanager
@@ -43,3 +45,6 @@ app.include_router(positions.router, prefix="/api")
 app.include_router(orders.router, prefix="/api")
 app.include_router(paper_trading.router, prefix="/api")
 app.include_router(dashboard.router, prefix="/api")
+app.include_router(broker_accounts.router, prefix="/api")
+app.include_router(kill_switch.router, prefix="/api")
+app.include_router(execution.router, prefix="/api")

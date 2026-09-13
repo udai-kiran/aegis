@@ -9,6 +9,7 @@ from sqlalchemy import (
     Boolean,
     DateTime,
     ForeignKey,
+    LargeBinary,
     Numeric,
     String,
     UniqueConstraint,
@@ -44,6 +45,7 @@ class Tenant(Base):
     risk_profile: Mapped[dict | None] = mapped_column(JSON, default=dict)
     resource_limits: Mapped[dict | None] = mapped_column(JSON, default=dict)
     features_enabled: Mapped[list | None] = mapped_column(JSON, default=list)
+    trading_halted: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow
     )
@@ -59,6 +61,7 @@ class Tenant(Base):
     risk_policies: Mapped[list[RiskPolicy]] = relationship()
     positions: Mapped[list[Position]] = relationship()
     orders: Mapped[list[Order]] = relationship()
+    broker_accounts: Mapped[list[BrokerAccount]] = relationship()
 
 
 class User(Base):
@@ -101,6 +104,7 @@ class Portfolio(Base):
     trading_mode: Mapped[str] = mapped_column(
         String(20), nullable=False, default="PAPER"
     )
+    trading_halted: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow
     )
@@ -353,10 +357,38 @@ class Order(Base):
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="NEW")
     reject_reason: Mapped[str | None] = mapped_column(String(500), nullable=True)
     source: Mapped[str] = mapped_column(String(30), nullable=False, default="PAPER")
+    broker_account_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("broker_accounts.id"), nullable=True
+    )
     trade_intent_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("trade_intents.id"), nullable=True
     )
     risk_decision: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, onupdate=_utcnow
+    )
+
+
+class BrokerAccount(Base):
+    __tablename__ = "broker_accounts"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=_new_uuid
+    )
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False
+    )
+    broker_type: Mapped[str] = mapped_column(String(30), nullable=False)
+    display_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    encrypted_credentials: Mapped[bytes | None] = mapped_column(
+        LargeBinary, nullable=True
+    )
+    credential_metadata: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="ACTIVE")
+    is_primary: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow
     )
