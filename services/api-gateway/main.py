@@ -13,6 +13,7 @@ from app.routers import risk_policies, positions, orders, paper_trading, dashboa
 from app.routers import broker_accounts
 from app.routers import kill_switch, execution
 from app.routers import market_regime, strategy_health, ai_allocation
+from app.routers import supervisor, news, counterfactual
 
 
 @asynccontextmanager
@@ -52,3 +53,6 @@ app.include_router(execution.router, prefix="/api")
 app.include_router(market_regime.router, prefix="/api")
 app.include_router(strategy_health.router, prefix="/api")
 app.include_router(ai_allocation.router, prefix="/api")
+app.include_router(supervisor.router, prefix="/api")
+app.include_router(news.router, prefix="/api")
+app.include_router(counterfactual.router, prefix="/api")
