@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, model_validator
 
 
 # --- Auth ---
@@ -468,3 +468,111 @@ class ReconciliationResult(BaseModel):
     broker_only: list[dict] = Field(default_factory=list)
     mismatches: list[dict] = Field(default_factory=list)
     reconciled_at: datetime
+
+
+# --- Market Regime (Phase 5) ---
+class RegimeComputeRequest(BaseModel):
+    symbol: str = Field(max_length=50)
+    exchange: str = Field(default="NSE", max_length=20)
+    timeframe: str = Field(default="1d", max_length=10)
+    lookback_bars: int = Field(default=50, ge=10, le=500)
+
+
+class MarketRegimeResponse(BaseModel):
+    id: uuid.UUID
+    regime_label: str
+    features: dict | None = None
+    confidence: float
+    symbol: str
+    exchange: str
+    timeframe: str
+    computed_at: datetime
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+# --- Strategy Health (Phase 5) ---
+class HealthEvaluateRequest(BaseModel):
+    strategy_config_id: uuid.UUID
+    portfolio_id: uuid.UUID
+
+
+class StrategyHealthResponse(BaseModel):
+    id: uuid.UUID
+    tenant_id: uuid.UUID
+    strategy_config_id: uuid.UUID
+    portfolio_id: uuid.UUID
+    win_rate: float
+    avg_return: float
+    sharpe_ratio: float | None = None
+    max_drawdown: float | None = None
+    total_trades: int
+    recent_pnl: float
+    health_score: float
+    health_status: str
+    evaluated_at: datetime
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+# --- AI Decision (Phase 5) ---
+class AllocationRequest(BaseModel):
+    portfolio_id: uuid.UUID
+    mode: str = Field(default="LIVE", pattern="^(LIVE|SHADOW)$")
+
+
+class AIDecisionResponse(BaseModel):
+    id: uuid.UUID
+    tenant_id: uuid.UUID
+    portfolio_id: uuid.UUID
+    market_regime_id: uuid.UUID | None = None
+    strategy_weights: dict
+    cash_weight: float
+    confidence: float
+    mode: str
+    reward_params: dict | None = None
+    context_snapshot: dict | None = None
+    explanation: str | None = None
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+# --- Shadow Result (Phase 5) ---
+class ShadowResultCreate(BaseModel):
+    ai_decision_id: uuid.UUID
+    strategy_config_id: uuid.UUID
+    hypothetical_return: float
+    actual_return: float
+    evaluation_start: datetime
+    evaluation_end: datetime
+
+    @model_validator(mode="after")
+    def _check_interval(self) -> ShadowResultCreate:
+        start = self.evaluation_start
+        end = self.evaluation_end
+        # Reject mixed naive/aware comparisons
+        if (start.tzinfo is None) != (end.tzinfo is None):
+            msg = "evaluation_start and evaluation_end must both be timezone-aware or both naive"
+            raise ValueError(msg)
+        if end <= start:
+            msg = "evaluation_end must be after evaluation_start"
+            raise ValueError(msg)
+        return self
+
+
+class ShadowResultResponse(BaseModel):
+    id: uuid.UUID
+    tenant_id: uuid.UUID
+    portfolio_id: uuid.UUID
+    ai_decision_id: uuid.UUID
+    strategy_config_id: uuid.UUID
+    hypothetical_return: float
+    actual_return: float
+    evaluation_start: datetime
+    evaluation_end: datetime
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
