@@ -61,7 +61,7 @@ function leverageValue(value: number | null): string {
 function PolicyTypeBadge({ policyType }: { policyType: string }) {
   if (policyType === "PORTFOLIO") {
     return (
-      <span className="inline-flex items-center rounded-full bg-purple-500/10 px-2 py-0.5 text-xs font-medium text-purple-400">
+      <span className="inline-flex items-center rounded-full bg-purple-500/10 px-2 py-0.5 text-xs font-medium text-purple-600">
         PORTFOLIO
       </span>
     );
@@ -222,7 +222,7 @@ export default function RiskPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-50">Risk</h1>
+          <h1 className="text-2xl font-semibold text-slate-800">Risk</h1>
           <p className="mt-1 text-sm text-slate-400">
             Manage risk policies and the trading kill switch
           </p>
@@ -234,9 +234,9 @@ export default function RiskPage() {
       </div>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-medium text-slate-50">Risk Policies</h2>
+        <h2 className="text-lg font-medium text-slate-800">Risk Policies</h2>
         {policiesQuery.isPending ? (
-          <div className="flex justify-center py-24 text-brand-400">
+          <div className="flex justify-center py-24 text-brand-600">
             <Spinner size="lg" />
           </div>
         ) : policiesQuery.isError ? (
@@ -320,13 +320,13 @@ export default function RiskPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-medium text-slate-50">Kill Switch</h2>
+        <h2 className="text-lg font-medium text-slate-800">Kill Switch</h2>
         <Card
           header={
             <div className="flex items-center justify-between">
               <span>Trading Status</span>
               {killSwitchQuery.isPending ? (
-                <Spinner size="sm" className="text-brand-400" />
+                <Spinner size="sm" className="text-brand-600" />
               ) : (
                 <span
                   className={clsx(
@@ -358,7 +358,7 @@ export default function RiskPage() {
                 (killSwitchStatus.portfolios_halted.length > 0 ||
                   killSwitchStatus.broker_accounts_halted.length > 0) && (
                   <div>
-                    <h3 className="mb-2 text-sm font-medium text-slate-50">
+                    <h3 className="mb-2 text-sm font-medium text-slate-800">
                       Halted entities
                     </h3>
                     <ul className="space-y-1">

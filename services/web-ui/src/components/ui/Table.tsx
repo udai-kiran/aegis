@@ -50,7 +50,7 @@ export function TableRow({
 }: HTMLAttributes<HTMLTableRowElement>) {
   return (
     <tr
-      className={clsx("transition-colors hover:bg-surface-2/50", className)}
+      className={clsx("transition-colors hover:bg-slate-50", className)}
       {...props}
     />
   );
@@ -63,7 +63,7 @@ export function TableHead({
   return (
     <th
       className={clsx(
-        "px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-400",
+        "px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500",
         className,
       )}
       {...props}
@@ -76,7 +76,7 @@ export function TableCell({
   ...props
 }: TdHTMLAttributes<HTMLTableCellElement>) {
   return (
-    <td className={clsx("px-4 py-3 text-slate-50", className)} {...props} />
+    <td className={clsx("px-4 py-3 text-slate-800", className)} {...props} />
   );
 }
 
@@ -91,7 +91,7 @@ export function TableEmpty({
 }: TableEmptyProps) {
   return (
     <tr>
-      <td colSpan={colSpan} className="px-4 py-12 text-center text-slate-400">
+      <td colSpan={colSpan} className="px-4 py-12 text-center text-slate-500">
         {message}
       </td>
     </tr>

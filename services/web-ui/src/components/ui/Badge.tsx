@@ -11,8 +11,8 @@ const variantClasses: Record<BadgeVariant, string> = {
   success: "bg-profit/10 text-profit",
   warning: "bg-warn/10 text-warn",
   danger: "bg-loss/10 text-loss",
-  info: "bg-brand-500/10 text-brand-400",
-  neutral: "bg-surface-2 text-slate-400",
+  info: "bg-brand-500/10 text-brand-600",
+  neutral: "bg-slate-100 text-slate-600",
 };
 
 export function Badge({

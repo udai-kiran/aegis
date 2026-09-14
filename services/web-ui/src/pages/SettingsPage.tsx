@@ -328,7 +328,7 @@ export default function SettingsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-50">Settings</h1>
+          <h1 className="text-2xl font-semibold text-slate-800">Settings</h1>
           <p className="mt-1 text-sm text-slate-400">
             Manage tenant, users, broker accounts, and the audit log
           </p>
@@ -362,8 +362,8 @@ export default function SettingsPage() {
             className={clsx(
               "rounded-md px-4 py-2 text-sm font-medium transition-colors",
               tab === item.id
-                ? "bg-surface-2 text-brand-400"
-                : "text-slate-400 hover:bg-surface-2 hover:text-slate-50",
+                ? "bg-brand-50 text-brand-700"
+                : "text-slate-500 hover:bg-slate-100 hover:text-slate-900",
             )}
           >
             {item.label}
@@ -374,7 +374,7 @@ export default function SettingsPage() {
       {tab === "tenant" &&
         (tenantId !== null ? (
           tenantQuery.isPending ? (
-            <div className="flex justify-center py-24 text-brand-400">
+            <div className="flex justify-center py-24 text-brand-600">
               <Spinner size="lg" />
             </div>
           ) : tenantQuery.isError ? (
@@ -391,7 +391,7 @@ export default function SettingsPage() {
                     <p className="text-xs uppercase tracking-wider text-slate-400">
                       Name
                     </p>
-                    <p className="mt-1 text-sm text-slate-50">{tenant?.name}</p>
+                    <p className="mt-1 text-sm text-slate-800">{tenant?.name}</p>
                   </div>
                   <div>
                     <p className="text-xs uppercase tracking-wider text-slate-400">
@@ -410,7 +410,7 @@ export default function SettingsPage() {
                     <p className="text-xs uppercase tracking-wider text-slate-400">
                       Subscription Plan
                     </p>
-                    <p className="mt-1 text-sm text-slate-50">
+                    <p className="mt-1 text-sm text-slate-800">
                       {tenant?.subscription_plan}
                     </p>
                   </div>
@@ -418,7 +418,7 @@ export default function SettingsPage() {
                     <p className="text-xs uppercase tracking-wider text-slate-400">
                       Default Currency
                     </p>
-                    <p className="mt-1 text-sm text-slate-50">
+                    <p className="mt-1 text-sm text-slate-800">
                       {tenant?.default_currency}
                     </p>
                   </div>
@@ -470,7 +470,7 @@ export default function SettingsPage() {
           )
         ) : isPlatformAdmin ? (
           tenantsQuery.isPending ? (
-            <div className="flex justify-center py-24 text-brand-400">
+            <div className="flex justify-center py-24 text-brand-600">
               <Spinner size="lg" />
             </div>
           ) : tenantsQuery.isError ? (
@@ -542,7 +542,7 @@ export default function SettingsPage() {
             />
           </Card>
         ) : usersQuery.isPending ? (
-          <div className="flex justify-center py-24 text-brand-400">
+          <div className="flex justify-center py-24 text-brand-600">
             <Spinner size="lg" />
           </div>
         ) : usersQuery.isError ? (
@@ -608,7 +608,7 @@ export default function SettingsPage() {
             />
           </Card>
         ) : brokerAccountsQuery.isPending ? (
-          <div className="flex justify-center py-24 text-brand-400">
+          <div className="flex justify-center py-24 text-brand-600">
             <Spinner size="lg" />
           </div>
         ) : brokerAccountsQuery.isError ? (
@@ -700,7 +700,7 @@ export default function SettingsPage() {
             />
           </Card>
         ) : auditQuery.isPending ? (
-          <div className="flex justify-center py-24 text-brand-400">
+          <div className="flex justify-center py-24 text-brand-600">
             <Spinner size="lg" />
           </div>
         ) : auditQuery.isError ? (
@@ -939,12 +939,12 @@ export default function SettingsPage() {
               </option>
             ))}
           </Select>
-          <label className="flex items-center gap-2 text-sm text-slate-50">
+          <label className="flex items-center gap-2 text-sm text-slate-800">
             <input
               type="checkbox"
               checked={editUserActive}
               onChange={(event) => setEditUserActive(event.target.checked)}
-              className="size-4 rounded border-surface-3 bg-surface-2"
+              className="size-4 rounded border-slate-300 bg-white"
             />
             Active
           </label>
@@ -997,12 +997,12 @@ export default function SettingsPage() {
             onChange={(event) => setNewAccountDisplayName(event.target.value)}
             placeholder="Zerodha - Main"
           />
-          <label className="flex items-center gap-2 text-sm text-slate-50">
+          <label className="flex items-center gap-2 text-sm text-slate-800">
             <input
               type="checkbox"
               checked={newAccountIsPrimary}
               onChange={(event) => setNewAccountIsPrimary(event.target.checked)}
-              className="size-4 rounded border-surface-3 bg-surface-2"
+              className="size-4 rounded border-slate-300 bg-white"
             />
             Set as primary account
           </label>
@@ -1044,14 +1044,14 @@ export default function SettingsPage() {
             value={editAccountDisplayName}
             onChange={(event) => setEditAccountDisplayName(event.target.value)}
           />
-          <label className="flex items-center gap-2 text-sm text-slate-50">
+          <label className="flex items-center gap-2 text-sm text-slate-800">
             <input
               type="checkbox"
               checked={editAccountIsPrimary}
               onChange={(event) =>
                 setEditAccountIsPrimary(event.target.checked)
               }
-              className="size-4 rounded border-surface-3 bg-surface-2"
+              className="size-4 rounded border-slate-300 bg-white"
             />
             Set as primary account
           </label>
@@ -1087,7 +1087,7 @@ export default function SettingsPage() {
       >
         <p className="text-sm text-slate-400">
           Are you sure you want to delete{" "}
-          <span className="font-medium text-slate-50">
+          <span className="font-medium text-slate-800">
             {deletingAccount?.display_name}
           </span>
           ? This action cannot be undone.

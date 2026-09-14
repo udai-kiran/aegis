@@ -106,7 +106,7 @@ function jsonBlock(data: unknown) {
 function RegimeBadge({ label }: { label: string }) {
   if (label === "VOLATILE") {
     return (
-      <span className="inline-flex items-center rounded-full bg-purple-500/10 px-2 py-0.5 text-xs font-medium text-purple-400">
+      <span className="inline-flex items-center rounded-full bg-purple-500/10 px-2 py-0.5 text-xs font-medium text-purple-600">
         {label}
       </span>
     );
@@ -339,7 +339,7 @@ export default function IntelligencePage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-50">Intelligence</h1>
+          <h1 className="text-2xl font-semibold text-slate-800">Intelligence</h1>
           <p className="mt-1 text-sm text-slate-400">
             AI decisions, market regimes, supervisor actions, and news
           </p>
@@ -379,8 +379,8 @@ export default function IntelligencePage() {
             className={clsx(
               "rounded-md px-4 py-2 text-sm font-medium transition-colors",
               tab === item.id
-                ? "bg-surface-2 text-slate-50"
-                : "text-slate-400 hover:bg-surface-2 hover:text-slate-50",
+                ? "bg-brand-50 text-brand-700"
+                : "text-slate-500 hover:bg-slate-100 hover:text-slate-900",
             )}
           >
             {item.label}
@@ -535,7 +535,7 @@ export default function IntelligencePage() {
           )}
         </>
       ) : isPending ? (
-        <div className="flex justify-center py-24 text-brand-400">
+        <div className="flex justify-center py-24 text-brand-600">
           <Spinner size="lg" />
         </div>
       ) : activeError ? (
@@ -605,7 +605,7 @@ export default function IntelligencePage() {
                             <p className="mb-1 text-xs font-medium uppercase tracking-wider text-slate-400">
                               Explanation
                             </p>
-                            <p className="text-sm text-slate-50">
+                            <p className="text-sm text-slate-800">
                               {decision.explanation ?? "—"}
                             </p>
                           </div>
@@ -726,7 +726,7 @@ export default function IntelligencePage() {
                             <p className="mb-1 text-xs font-medium uppercase tracking-wider text-slate-400">
                               Reasoning
                             </p>
-                            <p className="text-sm text-slate-50">
+                            <p className="text-sm text-slate-800">
                               {action.reasoning ?? "—"}
                             </p>
                           </div>

@@ -70,7 +70,7 @@ function MetricCard({
       <p className="text-xs text-slate-400">{label}</p>
       <p
         className={clsx(
-          "mt-1 text-sm font-semibold text-slate-50",
+          "mt-1 text-sm font-semibold text-slate-800",
           valueClassName,
         )}
       >
@@ -222,7 +222,7 @@ export default function BacktestsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-50">Backtests</h1>
+          <h1 className="text-2xl font-semibold text-slate-800">Backtests</h1>
           <p className="mt-1 text-sm text-slate-400">
             Run and review strategy backtests
           </p>
@@ -234,7 +234,7 @@ export default function BacktestsPage() {
       </div>
 
       {backtestsQuery.isPending ? (
-        <div className="flex justify-center py-24 text-brand-400">
+        <div className="flex justify-center py-24 text-brand-600">
           <Spinner size="lg" />
         </div>
       ) : backtestsQuery.isError ? (

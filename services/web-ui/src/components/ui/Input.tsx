@@ -20,7 +20,7 @@ export function Input({
   return (
     <div className="w-full">
       {label !== undefined && (
-        <label htmlFor={inputId} className="mb-1 block text-sm text-slate-400">
+        <label htmlFor={inputId} className="mb-1 block text-sm text-slate-600">
           {label}
         </label>
       )}
@@ -28,11 +28,11 @@ export function Input({
         ref={ref}
         id={inputId}
         className={clsx(
-          "w-full rounded-md border bg-surface-2 px-3 py-2 text-sm text-slate-50 placeholder-slate-500",
+          "w-full rounded-md border bg-white px-3 py-2 text-sm text-slate-800 placeholder-slate-400",
           "focus:outline-none focus:ring-1",
           error
             ? "border-loss focus:border-loss focus:ring-loss"
-            : "border-surface-3 focus:border-brand-500 focus:ring-brand-500",
+            : "border-slate-300 focus:border-brand-500 focus:ring-brand-500",
           className,
         )}
         aria-invalid={error ? true : undefined}

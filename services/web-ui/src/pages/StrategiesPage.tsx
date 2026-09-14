@@ -246,7 +246,7 @@ export default function StrategiesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-50">Strategies</h1>
+          <h1 className="text-2xl font-semibold text-slate-800">Strategies</h1>
           <p className="mt-1 text-sm text-slate-400">
             Manage strategies, configurations, and health
           </p>
@@ -280,8 +280,8 @@ export default function StrategiesPage() {
             className={clsx(
               "-mb-px border-b-2 px-4 py-2 text-sm font-medium transition-colors",
               tab === item.id
-                ? "border-brand-500 text-brand-400"
-                : "border-transparent text-slate-400 hover:text-slate-50",
+                ? "border-brand-600 text-brand-700"
+                : "border-transparent text-slate-500 hover:text-slate-900",
             )}
           >
             {item.label}
@@ -290,7 +290,7 @@ export default function StrategiesPage() {
       </div>
 
       {isPending ? (
-        <div className="flex justify-center py-24 text-brand-400">
+        <div className="flex justify-center py-24 text-brand-600">
           <Spinner size="lg" />
         </div>
       ) : activeError ? (
@@ -589,7 +589,7 @@ export default function StrategiesPage() {
           <div className="w-full">
             <label
               htmlFor="config-parameters"
-              className="mb-1 block text-sm text-slate-400"
+              className="mb-1 block text-sm text-slate-600"
             >
               Parameters (JSON)
             </label>
@@ -600,7 +600,7 @@ export default function StrategiesPage() {
               onChange={(event) => setParameters(event.target.value)}
               spellCheck={false}
               className={clsx(
-                "w-full rounded-md border bg-surface-2 px-3 py-2 font-mono text-sm text-slate-50 placeholder-slate-500",
+                "w-full rounded-md border bg-surface-2 px-3 py-2 font-mono text-sm text-slate-800 placeholder-slate-500",
                 "focus:outline-none focus:ring-1",
                 parametersError
                   ? "border-loss focus:border-loss focus:ring-loss"

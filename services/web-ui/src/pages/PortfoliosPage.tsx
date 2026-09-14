@@ -92,7 +92,7 @@ export default function PortfoliosPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-50">Portfolios</h1>
+          <h1 className="text-2xl font-semibold text-slate-800">Portfolios</h1>
           <p className="mt-1 text-sm text-slate-400">
             Manage your trading portfolios
           </p>
@@ -104,7 +104,7 @@ export default function PortfoliosPage() {
       </div>
 
       {portfoliosQuery.isPending ? (
-        <div className="flex justify-center py-24 text-brand-400">
+        <div className="flex justify-center py-24 text-brand-600">
           <Spinner size="lg" />
         </div>
       ) : portfoliosQuery.isError ? (

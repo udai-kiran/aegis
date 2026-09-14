@@ -141,7 +141,7 @@ export default function PortfolioDetailPage() {
 
   if (dashboardQuery.isPending) {
     return (
-      <div className="flex justify-center py-24 text-brand-400">
+      <div className="flex justify-center py-24 text-brand-600">
         <Spinner size="lg" />
       </div>
     );
@@ -172,13 +172,13 @@ export default function PortfolioDetailPage() {
         <div className="flex items-center gap-3">
           <div>
             <p className="text-sm text-slate-400">
-              <Link to="/portfolios" className="hover:text-brand-400">
+              <Link to="/portfolios" className="hover:text-brand-600">
                 Portfolios
               </Link>{" "}
               / {dashboard.portfolio_name}
             </p>
             <div className="mt-1 flex items-center gap-3">
-              <h1 className="text-2xl font-semibold text-slate-50">
+              <h1 className="text-2xl font-semibold text-slate-800">
                 {dashboard.portfolio_name}
               </h1>
               <Badge variant={tradingModeVariant(dashboard.trading_mode)}>
@@ -229,7 +229,7 @@ export default function PortfolioDetailPage() {
 
       <Card header="Positions">
         {positionsQuery.isPending ? (
-          <div className="flex justify-center py-8 text-brand-400">
+          <div className="flex justify-center py-8 text-brand-600">
             <Spinner />
           </div>
         ) : positionsQuery.isError ? (
@@ -290,7 +290,7 @@ export default function PortfolioDetailPage() {
 
       <Card header="Recent Orders">
         {ordersQuery.isPending ? (
-          <div className="flex justify-center py-8 text-brand-400">
+          <div className="flex justify-center py-8 text-brand-600">
             <Spinner />
           </div>
         ) : ordersQuery.isError ? (

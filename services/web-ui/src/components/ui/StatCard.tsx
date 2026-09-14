@@ -28,8 +28,8 @@ export function StatCard({
     <Card className={className}>
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-sm text-slate-400">{label}</p>
-          <p className="mt-1 text-2xl font-semibold text-slate-50">{value}</p>
+          <p className="text-sm text-slate-500">{label}</p>
+          <p className="mt-1 text-2xl font-semibold text-slate-800">{value}</p>
           {hasChange && (
             <p
               className={clsx(
@@ -49,7 +49,7 @@ export function StatCard({
         </div>
         {Icon !== undefined && (
           <div className="rounded-md bg-surface-2 p-2">
-            <Icon className="size-5 text-brand-400" />
+            <Icon className="size-5 text-brand-600" />
           </div>
         )}
       </div>

@@ -201,7 +201,7 @@ export default function OrdersPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-50">Orders</h1>
+          <h1 className="text-2xl font-semibold text-slate-800">Orders</h1>
           <p className="mt-1 text-sm text-slate-400">
             View live orders and place paper trades
           </p>
@@ -223,8 +223,8 @@ export default function OrdersPage() {
             className={clsx(
               "-mb-px border-b-2 px-4 py-2 text-sm font-medium transition-colors",
               tab === item.id
-                ? "border-brand-500 text-brand-400"
-                : "border-transparent text-slate-400 hover:text-slate-50",
+                ? "border-brand-600 text-brand-700"
+                : "border-transparent text-slate-500 hover:text-slate-900",
             )}
           >
             {item.label}
@@ -250,7 +250,7 @@ export default function OrdersPage() {
       )}
 
       {ordersQuery.isPending ? (
-        <div className="flex justify-center py-24 text-brand-400">
+        <div className="flex justify-center py-24 text-brand-600">
           <Spinner size="lg" />
         </div>
       ) : ordersQuery.isError ? (
