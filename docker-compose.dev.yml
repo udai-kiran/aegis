@@ -16,6 +16,9 @@ services:
       - "9001:9001"
 
   web-ui:
+    networks:
+      - internal
+      - external
     ports:
       - "3000:80"
 
@@ -24,7 +27,3 @@ services:
       - "8000:8000"
     environment:
       LOG_LEVEL: debug
-
-  web-ui:
-    ports:
-      - "3000:80"
