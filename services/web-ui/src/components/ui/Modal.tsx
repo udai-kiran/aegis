@@ -34,7 +34,7 @@ export function Modal({
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div
-        className="absolute inset-0 bg-black/60"
+        className="absolute inset-0 bg-slate-900/40"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -47,11 +47,11 @@ export function Modal({
         )}
       >
         <div className="flex items-center justify-between border-b border-surface-3 px-4 py-3">
-          <h2 className="text-sm font-medium text-slate-50">{title}</h2>
+          <h2 className="text-sm font-medium text-slate-800">{title}</h2>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-md p-1 text-slate-400 transition-colors hover:bg-surface-2 hover:text-slate-50"
+            className="rounded-md p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-900"
             aria-label="Close"
           >
             <X className="size-4" />

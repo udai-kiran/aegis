@@ -14,11 +14,11 @@ interface ButtonProps extends ComponentPropsWithRef<"button"> {
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary:
-    "bg-brand-500 text-white hover:bg-brand-600 disabled:hover:bg-brand-500",
+    "bg-brand-600 text-white hover:bg-brand-700 disabled:hover:bg-brand-600",
   secondary:
-    "border border-surface-3 bg-surface-2 text-slate-50 hover:bg-surface-3 disabled:hover:bg-surface-2",
+    "border border-surface-3 bg-surface-2 text-slate-700 hover:bg-slate-100 disabled:hover:bg-surface-2",
   danger: "bg-loss text-white hover:bg-loss/85 disabled:hover:bg-loss",
-  ghost: "text-slate-400 hover:bg-surface-2 hover:text-slate-50",
+  ghost: "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
 };
 
 const sizeClasses: Record<ButtonSize, string> = {

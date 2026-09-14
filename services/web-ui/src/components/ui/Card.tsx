@@ -23,13 +23,13 @@ export function Card({
       {...props}
     >
       {header !== undefined && (
-        <div className="border-b border-surface-3 px-4 py-3 text-sm font-medium text-slate-50">
+        <div className="border-b border-surface-3 px-4 py-3 text-sm font-medium text-slate-800">
           {header}
         </div>
       )}
       <div className="p-4">{children}</div>
       {footer !== undefined && (
-        <div className="border-t border-surface-3 px-4 py-3 text-sm text-slate-400">
+        <div className="border-t border-surface-3 px-4 py-3 text-sm text-slate-500">
           {footer}
         </div>
       )}

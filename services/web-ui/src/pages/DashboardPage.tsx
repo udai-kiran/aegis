@@ -77,7 +77,7 @@ export default function DashboardPage() {
 
   if (portfoliosQuery.isPending) {
     return (
-      <div className="flex justify-center py-24 text-brand-400">
+      <div className="flex justify-center py-24 text-brand-600">
         <Spinner size="lg" />
       </div>
     );
@@ -108,7 +108,7 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-slate-50">Dashboard</h1>
+        <h1 className="text-2xl font-semibold text-slate-800">Dashboard</h1>
         <p className="mt-1 text-sm text-slate-400">
           Welcome back{email ? `, ${email}` : ""}
         </p>
@@ -150,7 +150,7 @@ export default function DashboardPage() {
             action={
               <Link
                 to="/portfolios"
-                className="rounded-md bg-brand-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-600"
+                className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-700"
               >
                 Go to Portfolios
               </Link>
@@ -170,14 +170,14 @@ export default function DashboardPage() {
               >
                 <Card className="h-full transition-colors hover:border-brand-500/50">
                   <div className="flex items-start justify-between gap-2">
-                    <h3 className="text-sm font-medium text-slate-50">
+                    <h3 className="text-sm font-medium text-slate-800">
                       {portfolio.name}
                     </h3>
                     <Badge variant={tradingModeVariant(portfolio.trading_mode)}>
                       {portfolio.trading_mode}
                     </Badge>
                   </div>
-                  <p className="mt-3 text-2xl font-semibold text-slate-50">
+                  <p className="mt-3 text-2xl font-semibold text-slate-800">
                     {currency.format(portfolio.current_equity)}
                   </p>
                   <div className="mt-2 flex items-center justify-between text-sm">
